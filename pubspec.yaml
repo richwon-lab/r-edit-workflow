@@ -1,0 +1,11 @@
+name: r_edit_workflow
+description: 'R-edit의 작업 데이터, 변경 영향, 결과 확인 및 저장·출력 흐름을 관리하는 Dart 라이브러리'
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
