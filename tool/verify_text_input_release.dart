@@ -11,7 +11,7 @@ void main() {
   }());
   if (assertions) throw StateError('assert 비활성 실행이 필요합니다');
   final lines = [' PUMP ', ' e\u0301👩‍🔧 '];
-  final manual = ManualLineBreak(lines);
+  final manual = SpecifiedLineBreak(lines);
   final input = TextAreaInput(
     areaId: 'a',
     sourceText: lines.join(),
@@ -21,7 +21,7 @@ void main() {
   final restored = TextAreaInput.fromJson(
     jsonDecode(jsonEncode(input.toJson())),
   );
-  if (restored != input || restored.lineBreak is! ManualLineBreak) {
+  if (restored != input || restored.lineBreak is! SpecifiedLineBreak) {
     throw StateError('원문/직접 지정 왕복 실패');
   }
   final nextLines = ['VAL', 'VE'];
@@ -31,16 +31,38 @@ void main() {
   );
   nextLines.clear();
   if (next.sourceText != 'VALVE' ||
-      (next.lineBreak as ManualLineBreak).lines.join() != 'VALVE' ||
+      (next.lineBreak as SpecifiedLineBreak).lines.join() != 'VALVE' ||
       input.sourceText != ' PUMP  e\u0301👩‍🔧 ') {
     throw StateError('교체/목록 방어 실패');
+  }
+  final output = input.toJson();
+  ((output['lineBreak'] as Map<String, Object?>)['lines'] as List<String>)
+      .clear();
+  output['sourceText'] = 'OTHER';
+  if ((input.lineBreak as SpecifiedLineBreak).lines.join() !=
+      input.sourceText) {
+    throw StateError('반환 JSON 변경으로 모델이 바뀜');
+  }
+  const automaticJson =
+      '{"areaId":"a","sourceText":"PUMP","lineBreak":{"mode":"automatic"}}';
+  const specifiedJson =
+      '{"areaId":"a","sourceText":"PUMP","lineBreak":{"mode":"specified","lines":["PUMP"]}}';
+  for (final encoded in [automaticJson, specifiedJson]) {
+    if (jsonEncode(TextAreaInput.fromJson(jsonDecode(encoded)).toJson()) !=
+        encoded) {
+      throw StateError('새 JSON 문자열 왕복 실패');
+    }
+  }
+  if (TextAreaInput.fromJson(jsonDecode(specifiedJson)).lineBreak
+      is! SpecifiedLineBreak) {
+    throw StateError('직접 지정 한 줄 유실');
   }
   final failures = <(void Function(), TextInputErrorCode, String)>[
     (
       () => TextAreaInput(
         areaId: '',
         sourceText: 'PUMP',
-        lineBreak: const AutoLineBreak(),
+        lineBreak: const AutomaticLineBreak(),
       ),
       TextInputErrorCode.emptyAreaId,
       'areaId',
@@ -52,20 +74,20 @@ void main() {
     ),
     (
       () => input.copyWith(sourceText: 'VALVE'),
-      TextInputErrorCode.manualTextMismatch,
+      TextInputErrorCode.specifiedLinesMismatchSourceText,
       'lineBreak.lines',
     ),
     (
       () => input.copyWith(lineBreak: manual.copyWith(lines: ['VALVE'])),
-      TextInputErrorCode.manualTextMismatch,
+      TextInputErrorCode.specifiedLinesMismatchSourceText,
       'lineBreak.lines',
     ),
     (
       () => input.copyWith(
         sourceText: 'VALVE',
-        lineBreak: ManualLineBreak(['PUMP']),
+        lineBreak: SpecifiedLineBreak(['PUMP']),
       ),
-      TextInputErrorCode.manualTextMismatch,
+      TextInputErrorCode.specifiedLinesMismatchSourceText,
       'lineBreak.lines',
     ),
     (
@@ -80,17 +102,17 @@ void main() {
     ),
     (
       () => manual.copyWith(lines: []),
-      TextInputErrorCode.emptyManualLines,
+      TextInputErrorCode.emptySpecifiedLines,
       'lineBreak.lines',
     ),
     (
       () => manual.copyWith(lines: ['']),
-      TextInputErrorCode.emptyManualLine,
+      TextInputErrorCode.emptySpecifiedLine,
       'lineBreak.lines[0]',
     ),
     (
       () => manual.copyWith(lines: ['PUMP\r']),
-      TextInputErrorCode.manualLineContainsCrLf,
+      TextInputErrorCode.specifiedLineContainsCrLf,
       'lineBreak.lines[0]',
     ),
     (
@@ -98,11 +120,11 @@ void main() {
         'areaId': 'a',
         'sourceText': 'PUMP',
         'lineBreak': {
-          'mode': 'manual',
+          'mode': 'specified',
           'lines': ['pump'],
         },
       }),
-      TextInputErrorCode.manualTextMismatch,
+      TextInputErrorCode.specifiedLinesMismatchSourceText,
       'lineBreak.lines',
     ),
     (
@@ -114,15 +136,25 @@ void main() {
       TextInputErrorCode.missingField,
       'lineBreak.mode',
     ),
+    for (final mode in ['auto', 'manual'])
+      (
+        () => TextAreaInput.fromJson({
+          'areaId': 'a',
+          'sourceText': 'PUMP',
+          'lineBreak': {'mode': mode},
+        }),
+        TextInputErrorCode.unknownLineBreakMode,
+        'lineBreak.mode',
+      ),
   ];
-  for (final (run, code, path) in failures) {
+  for (final (run, code, fieldPath) in failures) {
     var rejected = false;
     try {
       run();
-    } on TextInputException catch (error) {
-      rejected = error.code == code && error.path == path;
+    } on TextInputValidationException catch (error) {
+      rejected = error.code == code && error.fieldPath == fieldPath;
     }
-    if (!rejected) throw StateError('업무 검증/오류 계약 우회: $code $path');
+    if (!rejected) throw StateError('업무 검증/오류 계약 우회: $code $fieldPath');
   }
   print('AOT: assert 비활성, 원문·왕복·교체·목록 방어 및 오류 ${failures.length}건 통과');
 }

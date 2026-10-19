@@ -4,8 +4,8 @@ library;
 export 'src/text_area_input.dart'
     show
         TextAreaInput,
-        LineBreakSpec,
-        AutoLineBreak,
-        ManualLineBreak,
+        LineBreakInput,
+        AutomaticLineBreak,
+        SpecifiedLineBreak,
         TextInputErrorCode,
-        TextInputException;
+        TextInputValidationException;

@@ -7,63 +7,63 @@ part 'text_area_input.g.dart';
 enum TextInputErrorCode {
   missingField,
   invalidType,
-  unknownMode,
+  unknownLineBreakMode,
   unexpectedField,
   emptyAreaId,
   emptySourceText,
-  emptyManualLines,
-  emptyManualLine,
+  emptySpecifiedLines,
+  emptySpecifiedLine,
   sourceContainsCrLf,
-  manualLineContainsCrLf,
-  manualTextMismatch,
+  specifiedLineContainsCrLf,
+  specifiedLinesMismatchSourceText,
 }
 
-/// 안정된 오류 코드와 JSON 필드 경로를 가진 검증 실패다.
+/// 오류 코드와 JSON 필드 경로를 가진 검증 실패다.
 ///
-/// [path]는 필드 또는 지정 줄 목록 위치이며 문자 오프셋이 아니다.
-final class TextInputException implements Exception {
-  const TextInputException(this.code, this.path);
+/// [fieldPath]는 필드 또는 지정 줄 목록 위치이며 문자 오프셋이 아니다.
+final class TextInputValidationException implements Exception {
+  const TextInputValidationException(this.code, this.fieldPath);
 
   final TextInputErrorCode code;
-  final String path;
+  final String fieldPath;
 
   @override
-  String toString() => 'TextInputException(${code.name}, $path)';
+  String toString() => 'TextInputValidationException(${code.name}, $fieldPath)';
 }
 
 /// 배치 크기·위치와 구분되는 명시적 줄바꿈 입력이다.
-sealed class LineBreakSpec {
-  const LineBreakSpec();
+sealed class LineBreakInput {
+  const LineBreakInput();
 
-  /// 방식·타입·필수 값은 기존 오류 계약으로 검사한다.
-  factory LineBreakSpec.fromJson(Object? json) {
+  /// JSON 구조를 검사한 뒤 구체 값의 생성자에서 업무 조건을 검사한다.
+  factory LineBreakInput.fromJson(Object? json) {
     final object = _object(json, 'lineBreak');
     final mode = _stringField(object, 'mode', 'lineBreak.mode');
     switch (mode) {
-      case 'auto':
+      case 'automatic':
         _checkFields(object, const {'mode'}, 'lineBreak');
-        return const AutoLineBreak();
-      case 'manual':
+        return const AutomaticLineBreak();
+      case 'specified':
         final value = _required(object, 'lines', 'lineBreak.lines');
         if (value is! List) {
-          throw const TextInputException(
+          throw const TextInputValidationException(
             TextInputErrorCode.invalidType,
             'lineBreak.lines',
           );
         }
         for (var i = 0; i < value.length; i++) {
           if (value[i] is! String) {
-            throw TextInputException(
+            throw TextInputValidationException(
               TextInputErrorCode.invalidType,
               'lineBreak.lines[$i]',
             );
           }
         }
         _checkFields(object, const {'mode', 'lines'}, 'lineBreak');
-        return _$ManualLineBreakFromJson(object);
+        return _$SpecifiedLineBreakFromJson(object);
       default:
-        throw const TextInputException(
-          TextInputErrorCode.unknownMode,
+        throw const TextInputValidationException(
+          TextInputErrorCode.unknownLineBreakMode,
           'lineBreak.mode',
         );
     }
@@ -80,11 +80,12 @@ sealed class LineBreakSpec {
   map: FreezedMapOptions.none,
   when: FreezedWhenOptions.none,
 )
-final class AutoLineBreak extends LineBreakSpec with _$AutoLineBreak {
-  const AutoLineBreak();
+final class AutomaticLineBreak extends LineBreakInput
+    with _$AutomaticLineBreak {
+  const AutomaticLineBreak();
 
   @override
-  Map<String, Object?> toJson() => {'mode': 'auto'};
+  Map<String, Object?> toJson() => {'mode': 'automatic'};
 }
 
 /// 한 줄도 명시적인 직접 지정으로 유지한다.
@@ -95,24 +96,25 @@ final class AutoLineBreak extends LineBreakSpec with _$AutoLineBreak {
   when: FreezedWhenOptions.none,
 )
 @JsonSerializable()
-final class ManualLineBreak extends LineBreakSpec with _$ManualLineBreak {
-  ManualLineBreak(List<String> lines) : lines = List.unmodifiable(lines) {
+final class SpecifiedLineBreak extends LineBreakInput
+    with _$SpecifiedLineBreak {
+  SpecifiedLineBreak(List<String> lines) : lines = List.unmodifiable(lines) {
     if (this.lines.isEmpty) {
-      throw const TextInputException(
-        TextInputErrorCode.emptyManualLines,
+      throw const TextInputValidationException(
+        TextInputErrorCode.emptySpecifiedLines,
         'lineBreak.lines',
       );
     }
     for (var i = 0; i < this.lines.length; i++) {
       if (this.lines[i].isEmpty) {
-        throw TextInputException(
-          TextInputErrorCode.emptyManualLine,
+        throw TextInputValidationException(
+          TextInputErrorCode.emptySpecifiedLine,
           'lineBreak.lines[$i]',
         );
       }
       if (_containsCrLf(this.lines[i])) {
-        throw TextInputException(
-          TextInputErrorCode.manualLineContainsCrLf,
+        throw TextInputValidationException(
+          TextInputErrorCode.specifiedLineContainsCrLf,
           'lineBreak.lines[$i]',
         );
       }
@@ -124,8 +126,8 @@ final class ManualLineBreak extends LineBreakSpec with _$ManualLineBreak {
 
   @override
   Map<String, Object?> toJson() => {
-    'mode': 'manual',
-    ..._$ManualLineBreakToJson(this),
+    'mode': 'specified',
+    ..._$SpecifiedLineBreakToJson(this),
   };
 }
 
@@ -146,10 +148,10 @@ final class TextAreaInput with _$TextAreaInput {
   }) {
     _validateAreaId(areaId);
     _validateSourceText(sourceText);
-    if (lineBreak case ManualLineBreak(:final lines)
+    if (lineBreak case SpecifiedLineBreak(:final lines)
         when lines.join() != sourceText) {
-      throw const TextInputException(
-        TextInputErrorCode.manualTextMismatch,
+      throw const TextInputValidationException(
+        TextInputErrorCode.specifiedLinesMismatchSourceText,
         'lineBreak.lines',
       );
     }
@@ -158,9 +160,9 @@ final class TextAreaInput with _$TextAreaInput {
   /// JSON 문자열 문법과 구분해 디코딩된 입력 조각을 검증한다.
   factory TextAreaInput.fromJson(Object? json) {
     final object = _object(json, r'$');
-    _validateAreaId(_stringField(object, 'areaId', 'areaId'));
-    _validateSourceText(_stringField(object, 'sourceText', 'sourceText'));
-    LineBreakSpec.fromJson(_required(object, 'lineBreak', 'lineBreak'));
+    _stringField(object, 'areaId', 'areaId');
+    _stringField(object, 'sourceText', 'sourceText');
+    _required(object, 'lineBreak', 'lineBreak');
     _checkFields(object, const {'areaId', 'sourceText', 'lineBreak'}, '');
     return _$TextAreaInputFromJson(object);
   }
@@ -168,57 +170,70 @@ final class TextAreaInput with _$TextAreaInput {
   final String areaId;
   final String sourceText;
   @JsonKey(fromJson: _lineBreakFromJson, toJson: _lineBreakToJson)
-  final LineBreakSpec lineBreak;
+  final LineBreakInput lineBreak;
 
   Map<String, Object?> toJson() => _$TextAreaInputToJson(this);
 }
 
 // sealed 타입 분기와 출력 목록 분리만 변환 경계에 남긴다.
-LineBreakSpec _lineBreakFromJson(Object? json) => LineBreakSpec.fromJson(json);
-Map<String, Object?> _lineBreakToJson(LineBreakSpec value) => value.toJson();
+LineBreakInput _lineBreakFromJson(Object? json) =>
+    LineBreakInput.fromJson(json);
+Map<String, Object?> _lineBreakToJson(LineBreakInput value) => value.toJson();
 List<String> _linesToJson(List<String> lines) => lines.toList();
 
 bool _containsCrLf(String text) => text.contains('\r') || text.contains('\n');
 
 void _validateAreaId(String areaId) {
   if (areaId.isEmpty) {
-    throw const TextInputException(TextInputErrorCode.emptyAreaId, 'areaId');
+    throw const TextInputValidationException(
+      TextInputErrorCode.emptyAreaId,
+      'areaId',
+    );
   }
 }
 
 void _validateSourceText(String sourceText) {
   if (sourceText.isEmpty) {
-    throw const TextInputException(
+    throw const TextInputValidationException(
       TextInputErrorCode.emptySourceText,
       'sourceText',
     );
   }
   if (_containsCrLf(sourceText)) {
-    throw const TextInputException(
+    throw const TextInputValidationException(
       TextInputErrorCode.sourceContainsCrLf,
       'sourceText',
     );
   }
 }
 
-Map<String, Object?> _object(Object? value, String path) {
+Map<String, Object?> _object(Object? value, String fieldPath) {
   if (value is! Map<String, Object?>) {
-    throw TextInputException(TextInputErrorCode.invalidType, path);
+    throw TextInputValidationException(
+      TextInputErrorCode.invalidType,
+      fieldPath,
+    );
   }
   return value;
 }
 
-Object? _required(Map<String, Object?> object, String key, String path) {
+Object? _required(Map<String, Object?> object, String key, String fieldPath) {
   if (!object.containsKey(key)) {
-    throw TextInputException(TextInputErrorCode.missingField, path);
+    throw TextInputValidationException(
+      TextInputErrorCode.missingField,
+      fieldPath,
+    );
   }
   return object[key];
 }
 
-String _stringField(Map<String, Object?> object, String key, String path) {
-  final value = _required(object, key, path);
+String _stringField(Map<String, Object?> object, String key, String fieldPath) {
+  final value = _required(object, key, fieldPath);
   if (value is! String) {
-    throw TextInputException(TextInputErrorCode.invalidType, path);
+    throw TextInputValidationException(
+      TextInputErrorCode.invalidType,
+      fieldPath,
+    );
   }
   return value;
 }
@@ -230,7 +245,7 @@ void _checkFields(
 ) {
   for (final key in object.keys) {
     if (!allowed.contains(key)) {
-      throw TextInputException(
+      throw TextInputValidationException(
         TextInputErrorCode.unexpectedField,
         prefix.isEmpty ? key : '$prefix.$key',
       );

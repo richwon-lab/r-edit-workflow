@@ -132,8 +132,8 @@ WorkDocument 안에 `appliedDesigns: List<AppliedDesign>`을 두고 WorkProduct�
 | TextAreaDefinition.areaId / label | String / String, 필수 | 도안 안 영역 ID / 표시 이름 |
 | geometry | TextAreaGeometry, 필수·세부 미정 | 영역 형상·위치. label·원문과 독립 |
 | TextAreaInput.areaId / sourceText | String / String, 필수 | 도안 영역 참조 / 공백·기호·대소문자·Unicode 표현 그대로 |
-| lineBreak | LineBreakSpec, 필수·현재 구현 | AutoLineBreak 또는 ManualLineBreak. 생략=auto로 보정하지 않음 |
-| ManualLineBreak.lines | List<String>, 필수·현재 구현 | 한 줄도 manual. join('')==sourceText, 임의 trim·공백 추가 금지 |
+| lineBreak | LineBreakInput, 필수·현재 구현 | AutomaticLineBreak 또는 SpecifiedLineBreak. 생략=auto로 보정하지 않음 |
+| SpecifiedLineBreak.lines | List<String>, 필수·현재 구현 | 한 줄도 manual. join('')==sourceText, 임의 trim·공백 추가 금지 |
 | AppliedLayoutCriteria.appliedCriteriaId | String, 필수 | 불변 실제 적용 기준 스냅샷 ID |
 | areaCriteria | 영역 ID별 AppliedAreaCriteria 목록, 필수 | 정렬·줄 수·여백·글꼴/크기·자폭·커터 조건 등 실제 사용 규칙. 세부 단위·타입은 첫 지원 규칙 결정 후 정의 |
 | patterns | List<AppliedTextPattern>, 필수 | 실제 적용 후보 범위·문구 조건·줄 제약·출처. 없음은 명시적 빈 목록이며 미해석을 빈 목록으로 바꾸지 않음 |
@@ -251,7 +251,7 @@ EngineIdentity.kind의 calculated/syntheticFixture 구분은 제거한다. 실�
       "textInputs": [{
         "areaId": "area-title",
         "sourceText": "MAIN PUMP",
-        "lineBreak": {"mode": "auto"}
+        "lineBreak": {"mode": "automatic"}
       }],
       "quantities": {"orderQuantity": 10, "fileProductionQuantity": 10},
       "outputMode": "quantityAnnotation"
@@ -264,7 +264,7 @@ EngineIdentity.kind의 calculated/syntheticFixture 구분은 제거한다. 실�
       "textInputs": [{
         "areaId": "area-title",
         "sourceText": "PUMP  A-1 ",
-        "lineBreak": {"mode": "manual", "lines": ["PUMP  A-1 "]}
+        "lineBreak": {"mode": "specified", "lines": ["PUMP  A-1 "]}
       }],
       "quantities": {"orderQuantity": 2, "fileProductionQuantity": 1},
       "outputMode": "repeatedGeometry"
@@ -277,7 +277,7 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 
 기존 완전 JSON처럼 보이던 직사각·단순 규칙 예시는 공유 참조·전체 계산 근거를 표현하지 못해 이 발췌로 교체했다. 완전한 저장 JSON은 형상·규칙·환경·위치 표현의 첫 지원 단면을 확정한 뒤 작성한다.
 
-## 9. 원본 대조 당시 제안한 첫 범위 (현재 구현은 11절)
+## 9. 원본 대조 당시 제안한 첫 범위 (현재 구현은 13절)
 
 **첫 범위는 영역별 원문과 자동/직접 지정 줄바꿈 값의 모델·검증·JSON 왕복**을 추천한다. TextAreaInput(areaId, sourceText, lineBreak)과 AutoLineBreak/ManualLineBreak 후보만 구현하고 문구+줄 구성의 원자적 변경 및 정확한 join 일치를 확인한다. 직접 지정 한 줄·앞뒤/연속 공백·기호·대소문자·한국어·결합 문자·이모지, 잘못된 줄 조각·알 수 없는 방식·필수 누락을 실제 테스트로 확인한다. 수량·도안·엔진 결과를 가짜로 붙여 WorkDocument 전체를 먼저 구현하지 않는다.
 
@@ -318,3 +318,11 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 영구 .toolchains/flutter-3.47.7의 포함 Dart 3.13.5에서 생성·포맷·분석, 기존 64개+추가 6개 테스트, assert 비활성 AOT 12건과 생성 없는 소비자 검사를 통과했다. 실제 Git 참조 앱·IDE UI·Flutter 릴리스 UI는 이번에 실행하지 않았다. 자세한 선택 버전·명령·재생성 결과·소비자 범위는 [전환 기록](freezed-migration.md), 채택 기준과 현재 이름/필드/오류 후보는 [개발 기준](development-rules-draft.md)에 있다.
 
 다음 한 가지 설계 작업인 도형·영역·제작 조건의 첫 지원 단면은 그대로 남아 있다. 이번에는 새 형상·업무 흐름·엔진·UI를 추가하지 않았다.
+
+## 13. 초기 네이밍·JSON 정리 (2026-10-20)
+
+현재 구현은 [네이밍·JSON 정리](input-naming-json.md)와 [현재 계약](contract.md)을 따른다. 9~12절은 당시 이름과 실행 사실을 보존한 기록이며 현재 API 설명이 아니다.
+
+TextAreaInput의 lineBreak는 sealed LineBreakInput이며 AutomaticLineBreak / SpecifiedLineBreak로 구분한다. JSON mode는 automatic / specified만 지원하고 이전 auto/manual은 거부한다. TextInputValidationException은 code와 fieldPath를 제공한다. 오류 코드 변경은 현재 정리 기록에 명시한다. 구형 형식 지원·별칭·마이그레이션은 없다.
+
+JSON 경계는 구조·필수·타입·방식을 검사하고 생성자는 업무 조건을 검사한다. 루트에서 줄바꿈 값을 미리 생성하지 않으며 생성된 필드 변환을 통해 한 번 복원한다. 복수 오류 순서는 계약으로 정하지 않는다. 생성·copyWith·복원에서 검증, 원문 보존·방어 복사·직접 지정 한 줄·빈 원문/빈 줄/CR/LF의 첫 지원 제한은 유지한다. 전체 제품 정책과 문자 위치 단위는 계속 보류한다.

@@ -6,12 +6,12 @@ part of 'text_area_input.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ManualLineBreak _$ManualLineBreakFromJson(Map<String, dynamic> json) =>
-    ManualLineBreak(
+SpecifiedLineBreak _$SpecifiedLineBreakFromJson(Map<String, dynamic> json) =>
+    SpecifiedLineBreak(
       (json['lines'] as List<dynamic>).map((e) => e as String).toList(),
     );
 
-Map<String, dynamic> _$ManualLineBreakToJson(ManualLineBreak instance) =>
+Map<String, dynamic> _$SpecifiedLineBreakToJson(SpecifiedLineBreak instance) =>
     <String, dynamic>{'lines': _linesToJson(instance.lines)};
 
 TextAreaInput _$TextAreaInputFromJson(Map<String, dynamic> json) =>

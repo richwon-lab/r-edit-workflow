@@ -5,15 +5,15 @@
 
 ## 구현된 영역 입력 API와 첫 지원 제한
 
-공개 진입점 lib/r_edit_workflow.dart는 TextAreaInput, LineBreakSpec, AutoLineBreak, ManualLineBreak, TextInputErrorCode, TextInputException을 노출한다. 내부 구현은 lib/src/text_area_input.dart다. TextAreaInput은 areaId·sourceText·명시적 lineBreak를 모두 받아 유효한 불변 값만 생성한다. 원문과 직접 지정 줄은 새 객체 또는 생성된 copyWith에서 함께 검증해 교체하며 중간 불일치 값을 만들지 않는다. 부모와 구체 타입의 수정 경로는 모두 실제 생성자를 호출한다.
+공개 진입점 lib/r_edit_workflow.dart는 TextAreaInput, LineBreakInput, AutomaticLineBreak, SpecifiedLineBreak, TextInputErrorCode, TextInputValidationException을 노출한다. 내부 구현은 lib/src/text_area_input.dart다. TextAreaInput은 areaId·sourceText·명시적 lineBreak를 모두 받아 유효한 불변 값만 생성한다. 원문과 직접 지정 줄은 새 객체 또는 생성된 copyWith에서 함께 검증해 교체하며 중간 불일치 값을 만들지 않는다. 부모와 구체 타입의 수정 경로는 모두 실제 생성자를 호출한다.
 
-areaId는 빈 문자열을 거부하고 전달한 문자열을 그대로 보존한다. 원문도 trim·공백 합치기·Unicode 정규화를 하지 않는다. 직접 지정은 한 줄 이상이고 모든 조각의 연결이 원문과 정확히 같아야 한다. 한 줄도 manual을 유지한다. 입력 목록은 방어 복사한 수정 불가 값이며 JSON 출력도 분리된 목록을 반환한다.
+areaId는 빈 문자열을 거부하고 전달한 문자열을 그대로 보존한다. 원문도 trim·공백 합치기·Unicode 정규화를 하지 않는다. 직접 지정은 한 줄 이상이고 모든 조각의 연결이 원문과 정확히 같아야 한다. 한 줄도 specified를 유지한다. 입력 목록은 방어 복사한 수정 불가 값이며 JSON 출력도 분리된 목록을 반환한다.
 
 빈 원문·빈 줄·원문 또는 줄 조각의 CR/LF는 첫 구현에서 미지원이며 서로 구분되는 오류 코드와 필드 경로로 반환한다. 공백만 있는 문자열·탭은 빈 값으로 바꾸지 않는다. 이 제한을 전체 제품 정책으로 확정하지 않는다. 값 검증은 배치·제작 가능 판정이 아니며 문자 오프셋 API도 없다.
 
-JSON은 areaId:String, sourceText:String, lineBreak:{mode:auto|manual, manual일 때 lines:List<String>} 구조다. 방식은 필수이고 누락·null/타입 오류·모르는 방식·줄 불일치를 구분한다. 알려지지 않은 필드도 거부하며 auto의 lines를 조용히 버리지 않는다. TextInputException의 code와 path로 첫 오류를 전달한다. path의 목록 인덱스는 문자 위치 단위가 아니다. JSON 문자열 문법은 dart:convert가 검사하고 모델은 디코딩된 객체를 검사한다.
+JSON은 areaId:String, sourceText:String, lineBreak:{mode:automatic|specified, specified일 때 lines:List<String>} 구조다. 방식은 필수이고 누락·null/타입 오류·모르는 방식·줄 불일치를 구분한다. 알려지지 않은 필드도 거부하며 automatic의 lines를 조용히 버리지 않는다. TextInputValidationException의 code와 fieldPath로 첫 오류를 전달한다. fieldPath의 목록 인덱스는 문자 위치 단위가 아니다. JSON 문자열 문법은 dart:convert가 검사하고 모델은 디코딩된 객체를 검사한다.
 
-Freezed의 생성된 값 비교·copyWith와 json_serializable의 JSON 필드 변환을 사용한다. 실제 생성자에서 런타임 업무 검증을 수행하고 기존 code/path와 sealed 타입 구분은 유지한다. 전체 WorkDocument 스키마·미완료 파일 저장은 도입하지 않았다. 전체 오류 코드와 실행 예시는 [README](../README.md)에 기록한다.
+Freezed의 생성된 값 비교·copyWith와 json_serializable의 JSON 필드 변환을 사용한다. 실제 생성자에서 런타임 업무 검증을 수행하고 code/fieldPath와 sealed 타입 구분을 제공한다. 전체 WorkDocument 스키마·미완료 파일 저장은 도입하지 않았다. 전체 오류 코드와 실행 예시는 [README](../README.md)에 기록한다.
 
 ## 책임
 
@@ -77,4 +77,7 @@ Freezed의 생성된 값 비교·copyWith와 json_serializable의 JSON 필드 �
 
 ## 채택한 구현 도구와 소비 환경
 
-2026-10-20부터 프로젝트 전용 Flutter 3.47.7/Dart 3.13.5를 사용하고 SDK 제약은 ^3.13.5다. Freezed 4.0.3/json_serializable 6.14.1의 필요한 생성 파일은 Git 관리 대상이며 소비자가 별도 생성 없이 사용하도록 유지한다. 업무 검증에는 assert만 사용하지 않는다. [전환·검증 기록](freezed-migration.md)과 [개발 기준](development-rules-draft.md)을 따른다. 현재 이름·JSON·오류 계약은 유지하며 네이밍 후보는 rename 승인이 아니다.
+2026-10-20부터 프로젝트 전용 Flutter 3.47.7/Dart 3.13.5를 사용하고 SDK 제약은 ^3.13.5다. Freezed 4.0.3/json_serializable 6.14.1의 필요한 생성 파일은 Git 관리 대상이며 소비자가 별도 생성 없이 사용하도록 유지한다. 업무 검증에는 assert만 사용하지 않는다. [전환·검증 기록](freezed-migration.md)과 [개발 기준](development-rules-draft.md)을 따른다. 현재 이름·JSON·오류는 [초기 정리 결정](input-naming-json.md)을 따른다. 초기 형식의 구형 지원·별칭·마이그레이션은 제공하지 않는다.
+
+
+JSON 경계는 구조·필수·타입·지원 방식을 검사하고 생성자는 업무 조건을 검사한다. 루트 fromJson은 줄바꿈을 미리 생성하지 않으며 생성된 필드 변환에서 한 번 복원한다. 복수 오류의 발생 순서는 계약으로 보장하지 않는다. auto/manual은 unknownLineBreakMode로 거부한다.

@@ -13,7 +13,7 @@ part of 'text_area_input.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$AutoLineBreak {
+mixin _$AutomaticLineBreak {
 
 
 
@@ -21,7 +21,7 @@ mixin _$AutoLineBreak {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoLineBreak);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AutomaticLineBreak);
 }
 
 
@@ -30,56 +30,56 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-    return 'AutoLineBreak()';
+    return 'AutomaticLineBreak()';
 }
 
 
 }
 
 /// @nodoc
-class $AutoLineBreakCopyWith<$Res>  {
-$AutoLineBreakCopyWith(AutoLineBreak _, $Res Function(AutoLineBreak) __);
+class $AutomaticLineBreakCopyWith<$Res>  {
+$AutomaticLineBreakCopyWith(AutomaticLineBreak _, $Res Function(AutomaticLineBreak) __);
 }
 
 
 
 /// @nodoc
-mixin _$ManualLineBreak {
+mixin _$SpecifiedLineBreak {
 
 
-/// Create a copy of ManualLineBreak
+/// Create a copy of SpecifiedLineBreak
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ManualLineBreakCopyWith<ManualLineBreak> get copyWith => _$ManualLineBreakCopyWithImpl<ManualLineBreak>(this as ManualLineBreak, _$identity);
+$SpecifiedLineBreakCopyWith<SpecifiedLineBreak> get copyWith => _$SpecifiedLineBreakCopyWithImpl<SpecifiedLineBreak>(this as SpecifiedLineBreak, _$identity);
 
 
 
 @override
 bool operator ==(Object other) {
-  final _this = this as ManualLineBreak;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManualLineBreak&&const DeepCollectionEquality().equals(other.lines, _this.lines));
+  final _this = this as SpecifiedLineBreak;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SpecifiedLineBreak&&const DeepCollectionEquality().equals(other.lines, _this.lines));
 }
 
 
 @override
 int get hashCode {
-  final _this = this as ManualLineBreak;
+  final _this = this as SpecifiedLineBreak;
   return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.lines));
 }
 
 @override
 String toString() {
-  final _this = this as ManualLineBreak;
-  return 'ManualLineBreak(lines: ${_this.lines})';
+  final _this = this as SpecifiedLineBreak;
+  return 'SpecifiedLineBreak(lines: ${_this.lines})';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ManualLineBreakCopyWith<$Res>  {
-  factory $ManualLineBreakCopyWith(ManualLineBreak value, $Res Function(ManualLineBreak) _then) = _$ManualLineBreakCopyWithImpl;
+abstract mixin class $SpecifiedLineBreakCopyWith<$Res>  {
+  factory $SpecifiedLineBreakCopyWith(SpecifiedLineBreak value, $Res Function(SpecifiedLineBreak) _then) = _$SpecifiedLineBreakCopyWithImpl;
 @useResult
 $Res call({
  List<String> lines
@@ -90,17 +90,17 @@ $Res call({
 
 }
 /// @nodoc
-class _$ManualLineBreakCopyWithImpl<$Res>
-    implements $ManualLineBreakCopyWith<$Res> {
-  _$ManualLineBreakCopyWithImpl(this._self, this._then);
+class _$SpecifiedLineBreakCopyWithImpl<$Res>
+    implements $SpecifiedLineBreakCopyWith<$Res> {
+  _$SpecifiedLineBreakCopyWithImpl(this._self, this._then);
 
-  final ManualLineBreak _self;
-  final $Res Function(ManualLineBreak) _then;
+  final SpecifiedLineBreak _self;
+  final $Res Function(SpecifiedLineBreak) _then;
 
-/// Create a copy of ManualLineBreak
+/// Create a copy of SpecifiedLineBreak
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? lines = null,}) {
-  return _then(ManualLineBreak(
+  return _then(SpecifiedLineBreak(
 null == lines ? _self.lines : lines // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -149,7 +149,7 @@ abstract mixin class $TextAreaInputCopyWith<$Res>  {
   factory $TextAreaInputCopyWith(TextAreaInput value, $Res Function(TextAreaInput) _then) = _$TextAreaInputCopyWithImpl;
 @useResult
 $Res call({
- String areaId, String sourceText, LineBreakSpec lineBreak
+ String areaId, String sourceText, LineBreakInput lineBreak
 });
 
 
@@ -171,7 +171,7 @@ class _$TextAreaInputCopyWithImpl<$Res>
 areaId: null == areaId ? _self.areaId : areaId // ignore: cast_nullable_to_non_nullable
 as String,sourceText: null == sourceText ? _self.sourceText : sourceText // ignore: cast_nullable_to_non_nullable
 as String,lineBreak: null == lineBreak ? _self.lineBreak : lineBreak // ignore: cast_nullable_to_non_nullable
-as LineBreakSpec,
+as LineBreakInput,
   ));
 }
 

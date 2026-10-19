@@ -17,8 +17,8 @@
 
 ## 채택한 모델 개발 기준
 
-- [개발 기준과 네이밍 검토](docs/development-rules-draft.md)를 따른다. 기술·언어·검증 기준은 2026-10-20 사용자 결정이며 네이밍 후보는 변경 승인이 아니다.
+- [개발 기준과 네이밍 검토](docs/development-rules-draft.md)를 따른다. 기술·언어·검증·현재 입력 네이밍은 2026-10-20 사용자 결정이다. [현재 네이밍·JSON](docs/input-naming-json.md)을 따른다.
 - 불변 값의 반복 코드는 Freezed, JSON 필드 변환은 json_serializable로 생성한다. 업무 검증은 직접 작성하고 생성·수정·복원·assert 비활성 AOT에서 확인한다.
-- 직접 작성하는 주석·API 설명·테스트 설명·개발 문서는 한국어 중심으로 쓰고 기존 공개 이름과 sealed 타입 구분을 임의로 바꾸지 않는다.
+- 직접 작성하는 주석·API 설명·테스트 설명·개발 문서는 한국어 중심으로 쓰고 확정한 공개 이름과 sealed 타입 구분을 따른다. 초기의 이전 이름·JSON·복수 오류 순서를 배포된 호환 계약으로 취급하지 않으며 구형 지원·별칭·마이그레이션을 만들지 않는다.
 - 프로젝트 전용 .toolchains/flutter-3.47.7의 포함 Dart를 명시 경로로 실행한다. 다른 프로젝트 SDK·전역 PATH는 바꾸지 않는다. 명령과 IntelliJ 경로는 README와 docs/freezed-migration.md를 따른다.
 - lib/src의 필요한 .freezed.dart·.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다. SDK·캐시·빌드·로컬 IDE 파일은 제외한다.

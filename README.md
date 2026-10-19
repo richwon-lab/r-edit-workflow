@@ -8,9 +8,9 @@ R-edit의 작업 데이터, 변경 영향, 결과 확인 및 저장·출력 흐�
 공개 진입점은 `lib/r_edit_workflow.dart`, 구현은 `lib/src/text_area_input.dart`다.
 
 - `TextAreaInput(areaId:, sourceText:, lineBreak:)`: 영역 원문과 줄바꿈을 하나의 유효한 값으로 생성한다. 제품 전체가 아닌 영역 입력이라는 책임을 드러내기 위해 설계 후보 ProductTextInput 대신 이 이름을 선택했다.
-- `LineBreakSpec`: `AutoLineBreak` / `ManualLineBreak`의 sealed 합 타입이다.
-- `ManualLineBreak(List<String>)`: 지정 줄을 방어 복사하고 수정 불가 목록으로 보관한다. 한 줄도 직접 지정이다.
-- `TextInputException`: `TextInputErrorCode code`, `String path`로 실패 원인과 필드/목록 위치를 전달한다. 이 path는 문자 오프셋이 아니다.
+- `LineBreakInput`: `AutomaticLineBreak` / `SpecifiedLineBreak`의 sealed 합 타입이다.
+- `SpecifiedLineBreak(List<String>)`: 지정 줄을 방어 복사하고 수정 불가 목록으로 보관한다. 한 줄도 직접 지정이다.
+- `TextInputValidationException`: `TextInputErrorCode code`, `String fieldPath`로 실패 원인과 필드/목록 위치를 전달한다. 이 fieldPath는 문자 오프셋이 아니다.
 - 값 동등성·hashCode를 제공한다. 원문, 방식, 지정 줄 구성이 다르면 다른 값이다.
 
 ```dart
@@ -20,14 +20,14 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 final input = TextAreaInput(
   areaId: 'area-title',
   sourceText: 'PUMP  A-1 ',
-  lineBreak: ManualLineBreak(['PUMP  A-1 ']),
+  lineBreak: SpecifiedLineBreak(['PUMP  A-1 ']),
 );
 final encoded = jsonEncode(input.toJson());
 final restored = TextAreaInput.fromJson(jsonDecode(encoded));
 assert(restored == input);
 ```
 
-수정은 원문과 지정 줄을 함께 전달한 새 TextAreaInput 또는 생성된 copyWith로 교체한다. 생성자와 copyWith 모두 전체 조건을 검사하므로 불일치한 부분 수정은 거부된다. setter·범용 편집 프레임워크는 없다. LineBreakSpec의 sealed 구분을 유지하며 구체 줄 타입의 수정값을 부모 copyWith에 전달한다.
+수정은 원문과 지정 줄을 함께 전달한 새 TextAreaInput 또는 생성된 copyWith로 교체한다. 생성자와 copyWith 모두 전체 조건을 검사하므로 불일치한 부분 수정은 거부된다. setter·범용 편집 프레임워크는 없다. LineBreakInput의 sealed 구분을 유지하며 구체 줄 타입의 수정값을 부모 copyWith에 전달한다.
 
 ## 입력 지원 범위
 
@@ -45,22 +45,22 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 {
   "areaId": "area-title",
   "sourceText": "PUMP  A-1 ",
-  "lineBreak": {"mode": "manual", "lines": ["PUMP  A-1 "]}
+  "lineBreak": {"mode": "specified", "lines": ["PUMP  A-1 "]}
 }
 ```
 
-자동 방식은 `"lineBreak": {"mode": "auto"}`다. 이 형식은 영역 입력 조각이며 WorkDocument 전체 스키마·파일 I/O·미완료 저장 기능이 아니다.
+자동 방식은 `"lineBreak": {"mode": "automatic"}`다. 이 형식은 영역 입력 조각이며 WorkDocument 전체 스키마·파일 I/O·미완료 저장 기능이 아니다.
 
-`fromJson(Object?)`는 JSON 디코딩 결과를 받는다. 필수 누락은 missingField, 명시적 null/잘못된 타입은 invalidType, 알 수 없는 문자열 방식은 unknownMode다. 알 수 없는 필드와 자동 방식의 lines도 unexpectedField로 거부해 데이터를 조용히 버리지 않는다. 해석 가능한 첫 오류를 예외로 전달하며 모든 오류를 집계하지 않는다. JSON 문자열 문법 자체는 dart:convert의 jsonDecode가 검사한다.
+`fromJson(Object?)`는 JSON 디코딩 결과를 받는다. 필수 누락은 missingField, 명시적 null/잘못된 타입은 invalidType, 알 수 없는 문자열 방식은 unknownLineBreakMode다. 알 수 없는 필드와 자동 방식의 lines도 unexpectedField로 거부해 데이터를 조용히 버리지 않는다. 해석 가능한 첫 오류를 예외로 전달하며 모든 오류를 집계하지 않는다. JSON 문자열 문법 자체는 dart:convert의 jsonDecode가 검사한다.
 
 | 코드 | 의미 / 경로 예 |
 |---|---|
 | missingField / invalidType | 필수 누락 / 타입 오류, areaId·sourceText·lineBreak.mode·lineBreak.lines[1] 등 |
-| unknownMode / unexpectedField | 알 수 없는 방식 / 허용하지 않은 필드 |
+| unknownLineBreakMode / unexpectedField | 알 수 없는 방식 / 허용하지 않은 필드 |
 | emptyAreaId / emptySourceText | 빈 식별자 / 이번 미지원 빈 원문 |
-| emptyManualLines / emptyManualLine | 빈 지정 목록 / 이번 미지원 빈 줄 |
-| sourceContainsCrLf / manualLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF |
-| manualTextMismatch | 지정 줄의 연결 내용과 원문 불일치 |
+| emptySpecifiedLines / emptySpecifiedLine | 빈 지정 목록 / 이번 미지원 빈 줄 |
+| sourceContainsCrLf / specifiedLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF |
+| specifiedLinesMismatchSourceText | 지정 줄의 연결 내용과 원문 불일치 |
 
 값 비교·복사에는 Freezed 4.0.3, JSON 필드 변환에는 json_serializable 6.14.1을 사용한다. 업무 검증과 오류 경계는 직접 작성한다. runtime annotation 3.1.0/4.12.0, build_runner 2.16.2를 채택했고 기존 lints·test 제약은 유지했다. 이 작은 JSON은 전체 문서 형식이 아니다.
 
@@ -77,7 +77,7 @@ $workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe
 & $workflowDart test
 ```
 
-2026-10-20 실제 Dart 검사: pub get·코드 생성·format·analyze 성공, 기존 64개+추가 6개 테스트 통과. assert 비활성 AOT와 코드 생성 없는 별도 소비자 검사도 통과했다.
+현재 네이밍·JSON과 실제 검사 결과는 [초기 정리 기록](docs/input-naming-json.md)에 있다. 이전 70개 테스트·AOT 실행 결과는 [당시 전환 기록](docs/freezed-migration.md)에 보존한다.
 이 결과는 영역 입력 모델 검증이며 실제 배치·저장·출력·Type3 검증이 아니다.
 라이브러리 pubspec.lock, .dart_tool, .toolchains, build, IDE 설정과 로컬 override는 Git 관리에서 제외한다. 필요한 lib/src/*.freezed.dart와 *.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다.
 
@@ -97,7 +97,7 @@ WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업�
 
 ## 모델 도구 비교와 개발 규칙 검토
 
-이전 [Freezed/built_value 비교](docs/model-tools-comparison.md)를 거쳐 이번에는 Freezed를 채택했다. 현재 기준은 [전환 기록](docs/freezed-migration.md)과
-[개발 기준과 네이밍 검토](docs/development-rules-draft.md)다. 기술 기준은 확정, 이름 후보는 미확정으로 구분한다.
-비교 코드는 tool/model_comparison의 별도 두 패키지이며 루트 API·의존성에 포함하지 않는다.
-루트의 테스트와 별도로 각 비교 패키지의 생성·분석·테스트·AOT 검사를 실행해야 한다.
+[과거 Freezed/built_value 비교](docs/model-tools-comparison.md)와 [전환 기록](docs/freezed-migration.md)은 당시 코드·이름·결과를 보존한다. 현재 기준은 [네이밍·JSON 정리](docs/input-naming-json.md)와 [개발 기준](docs/development-rules-draft.md)이다.
+비교 코드는 당시 공개 API를 참조하는 과거 검증 자료이며 이번 이름 변경에 맞춰 다시 실행하지 않았다.
+
+JSON 경계에서는 구조·필수·타입·방식을 검사하고 업무 값 생성자에서는 원문과 지정 줄 연결 등의 조건을 검사한다. 줄 입력을 중복 생성하지 않는다. 복수 오류의 발생 순서는 고정하지 않는다. 이전 auto/manual 방식과 이전 공개 이름은 지원하지 않으며 별칭·마이그레이션은 없다.

@@ -3,21 +3,21 @@ import 'dart:convert';
 import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
-Matcher inputError(TextInputErrorCode code, String path) => throwsA(
-  isA<TextInputException>()
+Matcher inputError(TextInputErrorCode code, String fieldPath) => throwsA(
+  isA<TextInputValidationException>()
       .having((error) => error.code, 'code', code)
-      .having((error) => error.path, 'path', path),
+      .having((error) => error.fieldPath, 'fieldPath', fieldPath),
 );
 
 Map<String, Object?> automaticJson() => {
   'areaId': 'area-1',
   'sourceText': 'PUMP',
-  'lineBreak': {'mode': 'auto'},
+  'lineBreak': {'mode': 'automatic'},
 };
 
 Map<String, Object?> manualJson(Object? lines) => {
   ...automaticJson(),
-  'lineBreak': {'mode': 'manual', 'lines': lines},
+  'lineBreak': {'mode': 'specified', 'lines': lines},
 };
 
 TextAreaInput roundTrip(TextAreaInput input) =>
@@ -37,10 +37,10 @@ void main() {
     };
     for (final entry in examples.entries) {
       test('자동·직접 한 줄·여러 줄 보존: ${entry.key}', () {
-        for (final spec in <LineBreakSpec>[
-          const AutoLineBreak(),
-          ManualLineBreak([entry.key]),
-          ManualLineBreak(entry.value),
+        for (final spec in <LineBreakInput>[
+          const AutomaticLineBreak(),
+          SpecifiedLineBreak([entry.key]),
+          SpecifiedLineBreak(entry.value),
         ]) {
           final original = TextAreaInput(
             areaId: ' stable-area-id ',
@@ -53,14 +53,14 @@ void main() {
           expect(restored, original);
           expect(restored.hashCode, original.hashCode);
           switch (spec) {
-            case AutoLineBreak():
-              expect(restored.lineBreak, isA<AutoLineBreak>());
-              expect(restored.toJson()['lineBreak'], {'mode': 'auto'});
-            case ManualLineBreak(:final lines):
-              expect(restored.lineBreak, isA<ManualLineBreak>());
-              expect((restored.lineBreak as ManualLineBreak).lines, lines);
+            case AutomaticLineBreak():
+              expect(restored.lineBreak, isA<AutomaticLineBreak>());
+              expect(restored.toJson()['lineBreak'], {'mode': 'automatic'});
+            case SpecifiedLineBreak(:final lines):
+              expect(restored.lineBreak, isA<SpecifiedLineBreak>());
+              expect((restored.lineBreak as SpecifiedLineBreak).lines, lines);
               expect(restored.toJson()['lineBreak'], {
-                'mode': 'manual',
+                'mode': 'specified',
                 'lines': lines,
               });
           }
@@ -72,12 +72,12 @@ void main() {
       final composed = TextAreaInput(
         areaId: 'a',
         sourceText: 'é',
-        lineBreak: const AutoLineBreak(),
+        lineBreak: const AutomaticLineBreak(),
       );
       final decomposed = TextAreaInput(
         areaId: 'a',
         sourceText: 'e\u0301',
-        lineBreak: const AutoLineBreak(),
+        lineBreak: const AutomaticLineBreak(),
       );
       expect(roundTrip(composed).sourceText, 'é');
       expect(roundTrip(decomposed).sourceText, 'e\u0301');
@@ -88,12 +88,12 @@ void main() {
       final automatic = TextAreaInput(
         areaId: 'a',
         sourceText: 'PUMP',
-        lineBreak: const AutoLineBreak(),
+        lineBreak: const AutomaticLineBreak(),
       );
       final manual = TextAreaInput(
         areaId: 'a',
         sourceText: 'PUMP',
-        lineBreak: ManualLineBreak(['PUMP']),
+        lineBreak: SpecifiedLineBreak(['PUMP']),
       );
       expect({roundTrip(automatic), roundTrip(manual)}, hasLength(2));
     });
@@ -102,9 +102,9 @@ void main() {
       final input = TextAreaInput(
         areaId: 'a',
         sourceText: 'ABABAB',
-        lineBreak: ManualLineBreak(['A', 'BAB', 'AB']),
+        lineBreak: SpecifiedLineBreak(['A', 'BAB', 'AB']),
       );
-      expect((roundTrip(input).lineBreak as ManualLineBreak).lines, [
+      expect((roundTrip(input).lineBreak as SpecifiedLineBreak).lines, [
         'A',
         'BAB',
         'AB',
@@ -113,9 +113,12 @@ void main() {
         () => TextAreaInput(
           areaId: 'a',
           sourceText: 'ABABAB',
-          lineBreak: ManualLineBreak(['BAB', 'A', 'AB']),
+          lineBreak: SpecifiedLineBreak(['BAB', 'A', 'AB']),
         ),
-        inputError(TextInputErrorCode.manualTextMismatch, 'lineBreak.lines'),
+        inputError(
+          TextInputErrorCode.specifiedLinesMismatchSourceText,
+          'lineBreak.lines',
+        ),
       );
     });
   });
@@ -123,7 +126,7 @@ void main() {
   group('불변성과 원자적 교체', () {
     test('전달한 목록과 공개 목록에서 모델을 바꿀 수 없다', () {
       final lines = ['PUMP ', 'A'];
-      final spec = ManualLineBreak(lines);
+      final spec = SpecifiedLineBreak(lines);
       final input = TextAreaInput(
         areaId: 'a',
         sourceText: 'PUMP A',
@@ -145,7 +148,7 @@ void main() {
       final outputSpec = json['lineBreak'] as Map<String, Object?>;
       (outputSpec['lines'] as List<String>).clear();
       json['sourceText'] = 'OTHER';
-      expect((input.lineBreak as ManualLineBreak).lines, ['PU', 'MP']);
+      expect((input.lineBreak as SpecifiedLineBreak).lines, ['PU', 'MP']);
       expect(roundTrip(input).sourceText, 'PUMP');
     });
 
@@ -153,7 +156,7 @@ void main() {
       final original = TextAreaInput(
         areaId: 'a',
         sourceText: 'PUMP',
-        lineBreak: ManualLineBreak(['PUMP']),
+        lineBreak: SpecifiedLineBreak(['PUMP']),
       );
       expect(
         () => TextAreaInput(
@@ -161,15 +164,18 @@ void main() {
           sourceText: 'VALVE',
           lineBreak: original.lineBreak,
         ),
-        inputError(TextInputErrorCode.manualTextMismatch, 'lineBreak.lines'),
+        inputError(
+          TextInputErrorCode.specifiedLinesMismatchSourceText,
+          'lineBreak.lines',
+        ),
       );
       final replacement = TextAreaInput(
         areaId: original.areaId,
         sourceText: 'VALVE',
-        lineBreak: ManualLineBreak(['VAL', 'VE']),
+        lineBreak: SpecifiedLineBreak(['VAL', 'VE']),
       );
       expect(original.sourceText, 'PUMP');
-      expect((original.lineBreak as ManualLineBreak).lines, ['PUMP']);
+      expect((original.lineBreak as SpecifiedLineBreak).lines, ['PUMP']);
       expect(roundTrip(replacement).sourceText, 'VALVE');
     });
   });
@@ -227,14 +233,14 @@ void main() {
         );
       });
     }
-    for (final mode in ['', 'AUTO', 'manual ', 'unknown']) {
+    for (final mode in ['', 'AUTO', 'manual ', 'unknown', 'auto', 'manual']) {
       test('모르는 방식: $mode', () {
         expect(
           () => TextAreaInput.fromJson({
             ...automaticJson(),
             'lineBreak': {'mode': mode},
           }),
-          inputError(TextInputErrorCode.unknownMode, 'lineBreak.mode'),
+          inputError(TextInputErrorCode.unknownLineBreakMode, 'lineBreak.mode'),
         );
       });
     }
@@ -242,7 +248,7 @@ void main() {
       expect(
         () => TextAreaInput.fromJson({
           ...automaticJson(),
-          'lineBreak': {'mode': 'manual'},
+          'lineBreak': {'mode': 'specified'},
         }),
         inputError(TextInputErrorCode.missingField, 'lineBreak.lines'),
       );
@@ -272,7 +278,7 @@ void main() {
         () => TextAreaInput.fromJson({
           ...automaticJson(),
           'lineBreak': {
-            'mode': 'auto',
+            'mode': 'automatic',
             'lines': ['PUMP'],
           },
         }),
@@ -282,7 +288,7 @@ void main() {
         () => TextAreaInput.fromJson({
           ...automaticJson(),
           'lineBreak': {
-            'mode': 'manual',
+            'mode': 'specified',
             'lines': ['PUMP'],
             'extra': 1,
           },
@@ -298,7 +304,7 @@ void main() {
         () => TextAreaInput(
           areaId: '',
           sourceText: 'PUMP',
-          lineBreak: const AutoLineBreak(),
+          lineBreak: const AutomaticLineBreak(),
         ),
         inputError(TextInputErrorCode.emptyAreaId, 'areaId'),
       );
@@ -312,7 +318,7 @@ void main() {
         () => TextAreaInput(
           areaId: 'a',
           sourceText: '',
-          lineBreak: const AutoLineBreak(),
+          lineBreak: const AutomaticLineBreak(),
         ),
         inputError(TextInputErrorCode.emptySourceText, 'sourceText'),
       );
@@ -323,20 +329,20 @@ void main() {
     });
     test('빈 줄 목록과 빈 줄을 구분한다', () {
       expect(
-        () => ManualLineBreak([]),
-        inputError(TextInputErrorCode.emptyManualLines, 'lineBreak.lines'),
+        () => SpecifiedLineBreak([]),
+        inputError(TextInputErrorCode.emptySpecifiedLines, 'lineBreak.lines'),
       );
       expect(
         () => TextAreaInput.fromJson(manualJson([])),
-        inputError(TextInputErrorCode.emptyManualLines, 'lineBreak.lines'),
+        inputError(TextInputErrorCode.emptySpecifiedLines, 'lineBreak.lines'),
       );
       expect(
-        () => ManualLineBreak(['PU', '', 'MP']),
-        inputError(TextInputErrorCode.emptyManualLine, 'lineBreak.lines[1]'),
+        () => SpecifiedLineBreak(['PU', '', 'MP']),
+        inputError(TextInputErrorCode.emptySpecifiedLine, 'lineBreak.lines[1]'),
       );
       expect(
         () => TextAreaInput.fromJson(manualJson(['PU', '', 'MP'])),
-        inputError(TextInputErrorCode.emptyManualLine, 'lineBreak.lines[1]'),
+        inputError(TextInputErrorCode.emptySpecifiedLine, 'lineBreak.lines[1]'),
       );
     });
     for (final ending in ['\r', '\n', '\r\n']) {
@@ -345,7 +351,7 @@ void main() {
           () => TextAreaInput(
             areaId: 'a',
             sourceText: 'PU${ending}MP',
-            lineBreak: const AutoLineBreak(),
+            lineBreak: const AutomaticLineBreak(),
           ),
           inputError(TextInputErrorCode.sourceContainsCrLf, 'sourceText'),
         );
@@ -357,16 +363,16 @@ void main() {
           inputError(TextInputErrorCode.sourceContainsCrLf, 'sourceText'),
         );
         expect(
-          () => ManualLineBreak(['PU', '${ending}MP']),
+          () => SpecifiedLineBreak(['PU', '${ending}MP']),
           inputError(
-            TextInputErrorCode.manualLineContainsCrLf,
+            TextInputErrorCode.specifiedLineContainsCrLf,
             'lineBreak.lines[1]',
           ),
         );
         expect(
           () => TextAreaInput.fromJson(manualJson(['PU', '${ending}MP'])),
           inputError(
-            TextInputErrorCode.manualLineContainsCrLf,
+            TextInputErrorCode.specifiedLineContainsCrLf,
             'lineBreak.lines[1]',
           ),
         );
@@ -382,7 +388,10 @@ void main() {
       test('원문과 줄 목록의 차이를 보정하지 않는다: $lines', () {
         expect(
           () => TextAreaInput.fromJson(manualJson(lines)),
-          inputError(TextInputErrorCode.manualTextMismatch, 'lineBreak.lines'),
+          inputError(
+            TextInputErrorCode.specifiedLinesMismatchSourceText,
+            'lineBreak.lines',
+          ),
         );
       });
     }
