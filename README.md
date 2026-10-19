@@ -27,7 +27,7 @@ final restored = TextAreaInput.fromJson(jsonDecode(encoded));
 assert(restored == input);
 ```
 
-수정은 원문과 지정 줄을 함께 전달한 새 TextAreaInput을 만들어 교체한다. setter·부분 copyWith·범용 편집 명령 프레임워크는 없다. 실패하면 기존 값은 그대로다.
+수정은 원문과 지정 줄을 함께 전달한 새 TextAreaInput 또는 생성된 copyWith로 교체한다. 생성자와 copyWith 모두 전체 조건을 검사하므로 불일치한 부분 수정은 거부된다. setter·범용 편집 프레임워크는 없다. LineBreakSpec의 sealed 구분을 유지하며 구체 줄 타입의 수정값을 부모 copyWith에 전달한다.
 
 ## 입력 지원 범위
 
@@ -62,22 +62,24 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 | sourceContainsCrLf / manualLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF |
 | manualTextMismatch | 지정 줄의 연결 내용과 원문 불일치 |
 
-직접 작성한 toJson/fromJson과 Dart 기본 JSON 기능을 사용한다. 이 작은 구조에 코드 생성·런타임 패키지는 추가하지 않았다. pubspec.yaml과 기존 개발용 lints·test 의존성은 그대로다.
+값 비교·복사에는 Freezed 4.0.3, JSON 필드 변환에는 json_serializable 6.14.1을 사용한다. 업무 검증과 오류 경계는 직접 작성한다. runtime annotation 3.1.0/4.12.0, build_runner 2.16.2를 채택했고 기존 lints·test 제약은 유지했다. 이 작은 JSON은 전체 문서 형식이 아니다.
 
 ## 개발과 검증
 
-Dart SDK 3.12.2 stable (Windows x64), SDK 제약 `^3.12.2`를 유지한다. Flutter에 의존하지 않는다.
+프로젝트 전용 `.toolchains/flutter-3.47.7`의 포함 Dart 3.13.5 stable을 사용하며 SDK 제약은 `^3.13.5`다. 패키지 runtime은 Flutter에 의존하지 않는다. 공유 SDK·전역 PATH는 변경하지 않는다. 영구 SDK·IntelliJ 경로와 소비자 영향은 [전환 기록](docs/freezed-migration.md)에 있다.
 
 ```powershell
-dart pub get
-dart format lib test
-dart analyze
-dart test
+$workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe"
+& $workflowDart pub get
+& $workflowDart run build_runner build
+& $workflowDart format lib test tool/verify_text_input_release.dart
+& $workflowDart analyze
+& $workflowDart test
 ```
 
-2026-10-19 실제 Dart 검사: pub get 성공, format 적용, analyze 문제 없음, 테스트 64개 통과.
+2026-10-20 실제 Dart 검사: pub get·코드 생성·format·analyze 성공, 기존 64개+추가 6개 테스트 통과. assert 비활성 AOT와 코드 생성 없는 별도 소비자 검사도 통과했다.
 이 결과는 영역 입력 모델 검증이며 실제 배치·저장·출력·Type3 검증이 아니다.
-라이브러리 pubspec.lock, .dart_tool, IDE 설정과 로컬 override는 Git 관리에서 제외한다.
+라이브러리 pubspec.lock, .dart_tool, .toolchains, build, IDE 설정과 로컬 override는 Git 관리에서 제외한다. 필요한 lib/src/*.freezed.dart와 *.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다.
 
 ## 아직 구현하지 않은 범위
 
@@ -95,7 +97,7 @@ WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업�
 
 ## 모델 도구 비교와 개발 규칙 검토
 
-공개 구현을 유지한 상태에서 [Freezed/built_value 비교](docs/model-tools-comparison.md)와
-[개발 규칙 초안](docs/development-rules-draft.md)을 작성했다.
+이전 [Freezed/built_value 비교](docs/model-tools-comparison.md)를 거쳐 이번에는 Freezed를 채택했다. 현재 기준은 [전환 기록](docs/freezed-migration.md)과
+[개발 기준과 네이밍 검토](docs/development-rules-draft.md)다. 기술 기준은 확정, 이름 후보는 미확정으로 구분한다.
 비교 코드는 tool/model_comparison의 별도 두 패키지이며 루트 API·의존성에 포함하지 않는다.
 루트의 테스트와 별도로 각 비교 패키지의 생성·분석·테스트·AOT 검사를 실행해야 한다.

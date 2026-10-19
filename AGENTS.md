@@ -14,3 +14,11 @@
 - 실제 검증 결과와 미구현·미검증 사항을 분리해 보고한다. dart pub get, 존재하는 소스 디렉터리의 dart format, dart analyze를 실행한다. 실제 테스트가 있을 때 dart test를 실행하고 없으면 '테스트 없음'으로 기록한다.
 - 분석 오류나 실제 테스트 실패가 있으면 해결하거나 원인을 보고하고 커밋 전에 멈춘다. 실행하지 못한 검증은 사유를 기록한다.
 - .dart_tool, IDE 설정, 로컬 override와 라이브러리 pubspec.lock은 커밋하지 않는다. origin·브랜치·기존 이력을 임의로 변경하지 않는다.
+
+## 채택한 모델 개발 기준
+
+- [개발 기준과 네이밍 검토](docs/development-rules-draft.md)를 따른다. 기술·언어·검증 기준은 2026-10-20 사용자 결정이며 네이밍 후보는 변경 승인이 아니다.
+- 불변 값의 반복 코드는 Freezed, JSON 필드 변환은 json_serializable로 생성한다. 업무 검증은 직접 작성하고 생성·수정·복원·assert 비활성 AOT에서 확인한다.
+- 직접 작성하는 주석·API 설명·테스트 설명·개발 문서는 한국어 중심으로 쓰고 기존 공개 이름과 sealed 타입 구분을 임의로 바꾸지 않는다.
+- 프로젝트 전용 .toolchains/flutter-3.47.7의 포함 Dart를 명시 경로로 실행한다. 다른 프로젝트 SDK·전역 PATH는 바꾸지 않는다. 명령과 IntelliJ 경로는 README와 docs/freezed-migration.md를 따른다.
+- lib/src의 필요한 .freezed.dart·.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다. SDK·캐시·빌드·로컬 IDE 파일은 제외한다.

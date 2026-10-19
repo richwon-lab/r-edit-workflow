@@ -1,0 +1,14 @@
+# 운영 모델만 생성한다. 비교 패키지는 각자의 pubspec/build 설정으로 생성한다.
+targets:
+  $default:
+    sources:
+      - lib/**
+      - pubspec.yaml
+      - $package$
+    builders:
+      freezed:
+        generate_for:
+          - lib/src/text_area_input.dart
+      json_serializable:
+        generate_for:
+          - lib/src/text_area_input.dart

@@ -1,6 +1,6 @@
 # 첫 업무 모델 설계안
 
-2026-10-19 원본 대조 개정. 대상은 **C:/work/richwon/r_edit_workflow**다. 영역 입력의 실제 구현은 11절에 기록한다. 나머지는 논리 모델 제안이며 확정 Dart API·전체 저장 스키마·구현 완료 보고가 아니다. 이전 잠정안의 자료 누락 안내와 도안 내장·합성 구분 설계를 이번 대조 결과로 교체한다.
+2026-10-19 원본 대조 개정. 대상은 **C:/work/richwon/r_edit_workflow**다. 영역 입력의 초기 구현은 11절, 현재 Freezed 전환은 12절에 기록한다. 나머지는 논리 모델 제안이며 확정 Dart API·전체 저장 스키마·구현 완료 보고가 아니다. 이전 잠정안의 자료 누락 안내와 도안 내장·합성 구분 설계를 이번 대조 결과로 교체한다.
 
 WorkDocument/WorkSession 분리와 제품별 완료 결과에 연결하는 OperatorReview는 유지한다. 주요 수정은 작업 파일 안의 적용 도안 공유, 개별 변경 시 참조 분리, 규칙·패턴의 별도 적용 기록, 추가·삭제를 포함한 그룹 변경, ID뿐 아니라 입력 내용까지 대조하는 결과 수락·읽기 검증이다.
 
@@ -289,7 +289,7 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 
 원본/추출본 존재·값 포함 대조, 관련 문서 상대 링크, JSON 발췌의 문법·제품 2개·공유 도안 ID·기준 참조·원문/직접 지정 한 줄 연결을 확인했고 모두 통과했다. git diff --check도 통과했다. 앱 Git 상태와 두 Office 원본 해시는 시작 시와 같았다. 이는 문서 검사이며 실제 Dart 모델·저장 결과·그룹 계산 검증이 아니다. Dart/Flutter 분석·테스트는 코드 변경이 없어 이번에는 실행하지 않는다. 앱 파일·코드·의존성·Git 이력을 수정하지 않으며 커밋·푸시하지 않는다. 관련 계약과 다음 작업만 이 설계에 맞춘다.
 
-## 11. 영역 입력 최소 범위의 실제 구현 (2026-10-19)
+## 11. 최초 영역 입력 구현 기록 (2026-10-19, 현재 도구는 12절)
 
 이 절은 앞 절의 제안 중 이번에 구현한 부분을 구분한다. 설계 후보 ProductTextInput은 제품 전체가 아닌 영역 입력을 뜻하도록 **TextAreaInput**으로 정했다. LineBreakSpec은 자동/직접 지정의 합 타입이고 AutoLineBreak/ManualLineBreak는 명시적 입력 방식이다. 나머지 WorkDocument·도안·그룹·결과 설계는 여전히 미구현이다.
 
@@ -306,3 +306,15 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 실제 검증은 Dart SDK 3.12.2의 pub get·format·analyze·test로 수행했다. 초기 AutoLineBreak hashCode의 정적 접근 오류를 발견해 수정한 뒤 분석 문제 없음, 테스트 64개 통과를 확인했다. 테스트는 공개 진입점을 사용해 자동/직접 한 줄/여러 줄 JSON 문자열 왕복, 공백·기호·Unicode 표현과 반복 원문, 오류 구분·이번 미지원 입력·외부 목록 변경 방어·원자적 교체를 확인한다. 과거 Python 시험이나 실제 엔진 검증과 구분한다.
 
 다음 한 가지 작업은 첫 도형·영역·제작 조건의 지원 단면과 영역 ID 대응을 설계에서 정하는 것이다. 그 뒤에 적용 도안 공유와 명시 대상 분리 모델을 구현할 수 있다. 현재 단계에서 전체 문서·세션·그룹·배치 결과·엔진·DXF·Flutter 연결을 미리 만들지 않는다.
+
+## 12. Freezed 채택과 타입 계약 유지 (2026-10-20)
+
+사용자의 이번 결정으로 불변 값 반복 코드에는 Freezed, JSON 필드 변환에는 json_serializable을 채택했다. 실제 TextAreaInput과 AutoLineBreak/ManualLineBreak에 적용했고 LineBreakSpec은 sealed 타입으로 유지한다. 비교의 mode:String+nullable lines 구조는 운영 모델로 가져오지 않았다.
+
+현재 이름·생성자·필드·JSON·오류 code/path와 첫 미지원 구분은 그대로다. TextAreaInput/ManualLineBreak에 생성된 copyWith가 추가됐으며 두 생성자에서 직접 검증하므로 잘못된 부분 변경은 예외다. 줄 구체 타입 수정 뒤 부모 입력에 반영할 때도 원문 연결을 검사한다. 무필드 AutoLineBreak는 const 생성자를 유지하고 copyWith가 없다. 기존 문서의 부분 copyWith 없음은 초기 수동 구현 당시 기록이다.
+
+필드 변환·값 비교는 생성기에 맡겼고 수동 코드는 업무 검증·오류 경계·sealed 분기·외부 목록 방어에 둔다. 생성 파일은 Git 관리 대상, SDK·캐시·빌드·라이브러리 lock은 제외한다. 문자의 위치/경계 단위, 빈 원문·빈 줄·CR/LF의 전체 정책은 결정하지 않았다. 이번 미지원 처리와 공백만/Unicode 보존은 그대로 유지한다.
+
+영구 .toolchains/flutter-3.47.7의 포함 Dart 3.13.5에서 생성·포맷·분석, 기존 64개+추가 6개 테스트, assert 비활성 AOT 12건과 생성 없는 소비자 검사를 통과했다. 실제 Git 참조 앱·IDE UI·Flutter 릴리스 UI는 이번에 실행하지 않았다. 자세한 선택 버전·명령·재생성 결과·소비자 범위는 [전환 기록](freezed-migration.md), 채택 기준과 현재 이름/필드/오류 후보는 [개발 기준](development-rules-draft.md)에 있다.
+
+다음 한 가지 설계 작업인 도형·영역·제작 조건의 첫 지원 단면은 그대로 남아 있다. 이번에는 새 형상·업무 흐름·엔진·UI를 추가하지 않았다.
