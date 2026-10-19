@@ -92,3 +92,10 @@ WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업�
 - 형제 앱 [문서 색인](../r_edit/docs/README.md), [현재 결정](../r_edit/docs/decisions.md), [모듈 경계](../r_edit/docs/module-boundaries.md)
 
 참고 앱 HEAD는 ac11bd44cf098f3cc16b69b2d82d67eb94d1844a다. 추가 원본 자료의 실제 경로·해시와 해당 앱 작업 트리 상태는 모델 설계에 기록했다. 전체 요구사항·과거 시험 자료를 이 저장소에 반복 복사하지 않는다.
+
+## 모델 도구 비교와 개발 규칙 검토
+
+공개 구현을 유지한 상태에서 [Freezed/built_value 비교](docs/model-tools-comparison.md)와
+[개발 규칙 초안](docs/development-rules-draft.md)을 작성했다.
+비교 코드는 tool/model_comparison의 별도 두 패키지이며 루트 API·의존성에 포함하지 않는다.
+루트의 테스트와 별도로 각 비교 패키지의 생성·분석·테스트·AOT 검사를 실행해야 한다.

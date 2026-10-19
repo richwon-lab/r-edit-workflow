@@ -1,1 +1,6 @@
 include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    # 서로 다른 SDK/생성기 의존성은 각 비교 패키지에서 별도로 분석한다.
+    - tool/model_comparison/**

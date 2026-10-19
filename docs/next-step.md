@@ -65,3 +65,15 @@ PATH의 dart.bat 버전 조회가 완료되지 않아 Flutter SDK 내부의 dart
 - dart analyze: 종료 코드 0, No issues found!.
 - dart test: 종료 코드 0, 테스트 64개 통과.
 - 형제 앱·엔진·DXF·Flutter·파일 I/O·전체 문서·세션·도안·수량·그룹·결과 모델은 변경/구현하지 않았다. 문자 오프셋 API도 없다.
+
+## 모델 도구 비교·개발 규칙 초안 (2026-10-19)
+
+- 시작 HEAD ffe689b8db566ff3576be60015c8a065a94446e1, 변경·스테이징 없음. 공개 lib·기존 test·pubspec·AGENTS는 변경하지 않았다.
+- tool/model_comparison/freezed와 built_value의 별도 pubspec으로 비교했다. 실제 모델 선언·생성·수정·JSON·검증 코드와 결과는 model-tools-comparison.md에, 이름·주석·책임 명칭 초안은 development-rules-draft.md에 기록했다.
+- 공유 Flutter 3.44.8/Dart 3.12.2는 유지했다. 공식 안정 3.47.7 태그와 stable 커밋을 확인하고 별도 임시 경로의 포함 Dart 3.13.5로 두 후보를 실행했다. 지속 사용용 프로젝트별 SDK 방안은 비교 문서에 남겼다.
+- Freezed 4.0.3 + json_serializable 6.14.1, built_value/생성기 8.13.0 + built_collection 5.1.2, build_runner 2.16.2를 후보별로 해결했다. dependency_overrides는 사용하지 않았다. 전체 해결 그래프는 후보별 resolved-dependencies.json에 있다.
+- 두 후보 모두 코드 생성·포맷·분석 성공, 동일 테스트 70개 통과, assert 비활성 AOT에서 오류 11건 거부와 정상 왕복·동시 교체·네이밍 예시 실행을 확인했다.
+- 기존 공개 구현도 기존 Dart 3.12.2에서 pub get·format·analyze 성공, 기존 테스트 64개 통과를 확인했다. 비교 패키지는 루트 분석 대상에서 제외하고 각각 별도 분석했다.
+- 향후 생성 도구는 Freezed 일반 생성자 방식을 우선 검토하되 현재 작은 공개 모델은 유지할 것을 추천한다. 생성 도구·규칙의 일괄 채택은 아직 확정하지 않았다.
+- 다음 구현 전 이 추천·규칙 초안을 검토한다. 기존 다음 설계 과제인 첫 도형·영역·제작 조건 단면은 그대로 남아 있으며 새 업무 모델·UI·엔진은 구현하지 않았다.
+- 이번 변경은 비교 도구·문서·분석/산출물 제외 설정뿐이다. 커밋·푸시하지 않는다.

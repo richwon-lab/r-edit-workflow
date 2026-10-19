@@ -11,3 +11,7 @@ pubspec.lock
 .vscode/
 *.iml
 pubspec_overrides.yaml
+
+# 비교 실행 산출물
+tool/model_comparison/**/build/
+tool/model_comparison/**/build-tests.log
