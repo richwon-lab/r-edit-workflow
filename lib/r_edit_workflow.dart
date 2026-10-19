@@ -1,4 +1,11 @@
-/// R-edit의 작업 데이터와 업무 흐름을 위한 공개 진입점.
-///
-/// 현재 공개 업무 API는 없다. 내부 구현이 생기면 공개 API만 여기에서 노출한다.
+/// R-edit의 영역별 원문과 줄바꿈 입력을 위한 공개 API.
 library;
+
+export 'src/text_area_input.dart'
+    show
+        TextAreaInput,
+        LineBreakSpec,
+        AutoLineBreak,
+        ManualLineBreak,
+        TextInputErrorCode,
+        TextInputException;
