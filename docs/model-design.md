@@ -132,8 +132,8 @@ WorkDocument 안에 `appliedDesigns: List<AppliedDesign>`을 두고 WorkProduct�
 | TextAreaDefinition.areaId / label | String / String, 필수 | 도안 안 영역 ID / 표시 이름 |
 | geometry | TextAreaGeometry, 필수·세부 미정 | 영역 형상·위치. label·원문과 독립 |
 | TextAreaInput.areaId / sourceText | String / String, 필수 | 도안 영역 참조 / 공백·기호·대소문자·Unicode 표현 그대로 |
-| lineBreak | LineBreakInput, 필수·현재 구현 | AutomaticLineBreak 또는 SpecifiedLineBreak. 생략=auto로 보정하지 않음 |
-| SpecifiedLineBreak.lines | List<String>, 필수·현재 구현 | 한 줄도 manual. join('')==sourceText, 임의 trim·공백 추가 금지 |
+| lineBreak | LineBreakInput, 필수·현재 구현 | AutomaticLineBreak 또는 SpecifiedLineBreak. 생략을 자동 방식으로 보정하지 않음 |
+| SpecifiedLineBreak.lines | List<String>, 필수·현재 구현 | 한 줄도 specified 유지. join('')==sourceText, 임의 trim·공백 추가 금지 |
 | AppliedLayoutCriteria.appliedCriteriaId | String, 필수 | 불변 실제 적용 기준 스냅샷 ID |
 | areaCriteria | 영역 ID별 AppliedAreaCriteria 목록, 필수 | 정렬·줄 수·여백·글꼴/크기·자폭·커터 조건 등 실제 사용 규칙. 세부 단위·타입은 첫 지원 규칙 결정 후 정의 |
 | patterns | List<AppliedTextPattern>, 필수 | 실제 적용 후보 범위·문구 조건·줄 제약·출처. 없음은 명시적 빈 목록이며 미해석을 빈 목록으로 바꾸지 않음 |
@@ -294,7 +294,7 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 이 절은 앞 절의 제안 중 이번에 구현한 부분을 구분한다. 설계 후보 ProductTextInput은 제품 전체가 아닌 영역 입력을 뜻하도록 **TextAreaInput**으로 정했다. LineBreakSpec은 자동/직접 지정의 합 타입이고 AutoLineBreak/ManualLineBreak는 명시적 입력 방식이다. 나머지 WorkDocument·도안·그룹·결과 설계는 여전히 미구현이다.
 
 - TextAreaInput(areaId:String, sourceText:String, lineBreak:LineBreakSpec): 모두 필수이고 areaId는 비어 있지 않다. 원문과 ID를 정규화하지 않는다. 표시 이름·원문 기반 ID 발급도 없다.
-- ManualLineBreak(List<String>): 비어 있지 않은 지정 목록을 방어 복사해 수정 불가로 보관한다. 빈 줄과 CR/LF는 미지원이다. TextAreaInput 생성 시 join 결과와 sourceText의 정확한 일치를 추가 검사한다. 한 줄도 manual이다.
+- ManualLineBreak(List<String>): 비어 있지 않은 지정 목록을 방어 복사해 수정 불가로 보관한다. 빈 줄과 CR/LF는 미지원이다. TextAreaInput 생성 시 join 결과와 sourceText의 정확한 일치를 추가 검사한다. 한 줄도 specified 유지이다.
 - 모든 필드는 final이고 원문/지정 줄의 개별 setter·부분 copyWith가 없다. 유효한 새 객체를 구성해 원자적으로 교체한다. 값 동등성과 hashCode를 제공한다.
 - 빈 원문·빈 줄·원문/줄 조각의 CR/LF는 각각 emptySourceText·emptyManualLine·sourceContainsCrLf·manualLineContainsCrLf로 구분한다. 공백만 있는 문자열과 탭은 지원한다. 전체 제품의 빈 문구·개행 정책은 보류 상태이며 이번 제한을 확정 정책으로 확장하지 않는다.
 - TextInputException(code:TextInputErrorCode, path:String)이 첫 오류를 전달한다. missingField, invalidType, unknownMode, unexpectedField, emptyAreaId, emptyManualLines, manualTextMismatch도 구분한다. path는 필드/지정 줄 목록 위치이며 문자 오프셋이 아니다.
