@@ -1,5 +1,7 @@
 # 첫 업무 모델 설계안
 
+2026-10-26 제품 참조·변경의 현재 추천안은 [제품·도안 연결 계약](product-design-binding.md)이다. 형상 스냅샷과 완전한 제작 적용 내용을 구분하며, 아래 과거 WorkProduct/AppliedDesign 필드 후보를 새 구현의 필수값으로 간주하지 않는다.
+
 최신 도안 구성 값과 영역 입력 대조는 [도안 구성 계약](design-geometry.md)을 따른다. DesignGeometry/CutoutDefinition/TextAreaDefinition/TextRegion과 validateTextAreaInputs를 구현했다. 아래 이전 절의 영역 미구현 기록과 구분하며 AppliedDesign/제품 전체·배치·제작 판정은 여전히 미구현이다.
 
 현재 최소 기하 구현은 [기하 계약](applied-design-geometry.md)과 마지막 17절을 따른다. 아래 이전 직사각/원형 홀 모델과 재설계 당시의 원호 분할 권고는 과거 기록이다. 원은 중심/반지름으로 직접 보존하고 경로는 시작점 하나+끝점 구간으로 교체했다. 업무 관계는 아직 설계다.
