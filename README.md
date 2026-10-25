@@ -85,6 +85,10 @@ $workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe
 
 WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업자 확인, 엔진·DXF·파일 I/O·Flutter 연결은 미구현이다. 앱 → 업무 흐름 → 배치 엔진·DXF의 공개 API 의존 방향을 유지하며 아직 없는 패키지를 선언하지 않는다.
 
+## 적용 도안·영역 설계 상태
+
+[첫 형상·영역 설계](docs/applied-design-geometry.md)는 mm·명판 좌표계와 직사각 외곽/영역·원형 홀의 첫 지원안을 제안한다. 도안 공유·영역 ID 대응·변경·제작 조건·검증 경계를 정리했으며 업무 코드로 구현하지 않았다. 다음 최소 구현은 제안 검토 후 형상·영역의 불변 값과 검증·JSON 왕복이다.
+
 ## 기준 문서
 
 - [개발 지침](AGENTS.md)

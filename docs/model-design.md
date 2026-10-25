@@ -1,8 +1,10 @@
 # 첫 업무 모델 설계안
 
-2026-10-19 원본 대조 개정. 대상은 **C:/work/richwon/r_edit_workflow**다. 영역 입력의 초기 구현은 11절, 현재 Freezed 전환은 12절에 기록한다. 나머지는 논리 모델 제안이며 확정 Dart API·전체 저장 스키마·구현 완료 보고가 아니다. 이전 잠정안의 자료 누락 안내와 도안 내장·합성 구분 설계를 이번 대조 결과로 교체한다.
+2026-10-19 원본 대조 개정. 대상은 **C:/work/richwon/r_edit_workflow**다. 영역 입력의 현재 API는 13절, 적용 도안·영역의 첫 형상 제안은 14절과 별도 설계 문서를 따른다. 11~12절은 당시 구현 기록이다. 나머지는 논리 모델 제안이며 확정 Dart API·전체 저장 스키마·구현 완료 보고가 아니다. 이전 잠정안의 자료 누락 안내와 도안 내장·합성 구분 설계를 이번 대조 결과로 교체한다.
 
 WorkDocument/WorkSession 분리와 제품별 완료 결과에 연결하는 OperatorReview는 유지한다. 주요 수정은 작업 파일 안의 적용 도안 공유, 개별 변경 시 참조 분리, 규칙·패턴의 별도 적용 기록, 추가·삭제를 포함한 그룹 변경, ID뿐 아니라 입력 내용까지 대조하는 결과 수락·읽기 검증이다.
+
+현재 검토할 형상·좌표·영역 ID·제작 조건 구분은 [적용 도안과 영역 설계](applied-design-geometry.md)에 모았다. 그 문서의 첫 지원안은 제안이며 아직 구현하지 않았다.
 
 ## 1. 작업 대상과 읽은 자료
 
@@ -326,3 +328,11 @@ appliedDesignReferences/appliedCriteriaReferences는 이 발췌의 해석 안내
 TextAreaInput의 lineBreak는 sealed LineBreakInput이며 AutomaticLineBreak / SpecifiedLineBreak로 구분한다. JSON mode는 automatic / specified만 지원하고 이전 auto/manual은 거부한다. TextInputValidationException은 code와 fieldPath를 제공한다. 오류 코드 변경은 현재 정리 기록에 명시한다. 구형 형식 지원·별칭·마이그레이션은 없다.
 
 JSON 경계는 구조·필수·타입·방식을 검사하고 생성자는 업무 조건을 검사한다. 루트에서 줄바꿈 값을 미리 생성하지 않으며 생성된 필드 변환을 통해 한 번 복원한다. 복수 오류 순서는 계약으로 정하지 않는다. 생성·copyWith·복원에서 검증, 원문 보존·방어 복사·직접 지정 한 줄·빈 원문/빈 줄/CR/LF의 첫 지원 제한은 유지한다. 전체 제품 정책과 문자 위치 단위는 계속 보류한다.
+
+## 14. 적용 도안·영역의 첫 형상 제안 (2026-10-21)
+
+[상세 설계](applied-design-geometry.md)가 4.2절의 geometry·영역 표현 미정을 첫 지원안으로 구체화한다. mm·왼쪽 아래 원점·+X 오른쪽/+Y 위쪽·축 평행 직사각 외곽/영역·원형 홀 목록을 제안하며 최종 제품 지원 범위로 확정하지 않는다. 화면 좌표와 DXF 문서 내 배치는 별도 변환이다.
+
+AppliedDesign의 외곽/홀/영역 소유, 제품 TextAreaInput과 areaId 연결, 불변 공유와 명시 대상 참조 분리는 기존 합의를 유지한다. 영역-홀 겹침만으로 정의를 거부하지 않고 실제 글자의 침범은 후속 엔진이 검사한다. 값 자체·참조·형상 관계·배치 판정의 검증 책임을 구분했다. 제작 조건은 형상/배치/출력/관리 영향으로 분류했으며 구체 필수 필드와 포함/접촉 정책·허용오차는 미정이다.
+
+다음 최소 구현 후보는 RectangularPlateGeometry·CircularHole·TextAreaBounds·TextAreaDefinition의 불변 값과 검증·JSON 왕복이다. 이름/JSON 형상 식별/오류를 정한 뒤 진행하며 AppliedDesign 전체·production·제품 연결·변경 명령·포함/간섭 검사·저장/엔진/DXF는 아직 구현하지 않는다. 이번에는 문서만 작성했다.
