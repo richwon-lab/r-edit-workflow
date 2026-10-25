@@ -1,6 +1,6 @@
 # r_edit_workflow
 
-현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 전체 도안·가공·텍스트 영역 조립은 아직 구현하지 않았다.
+현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 외곽·관통 구멍·텍스트 영역의 [도안 구성과 입력 연결 검증](docs/design-geometry.md)을 구현했다. 전체 적용 도안·제품·계산/제작 기능은 아직 없다.
 
 R-edit의 작업 데이터, 변경 영향, 결과 확인 및 저장·출력 흐름을 담당하는 순수 Dart 라이브러리다.
 
@@ -33,7 +33,7 @@ assert(restored == input);
 
 ## 입력 지원 범위
 
-areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생성하지 않는다. 공백을 trim하지 않으므로 ID도 전달한 값을 그대로 보존한다. 실제 도안 영역 참조 존재 여부는 아직 검사하지 않는다.
+areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생성하지 않는다. 공백을 trim하지 않으므로 ID도 전달한 값을 그대로 보존한다. TextAreaInput 단독 생성은 도안 참조를 검사하지 않으며 validateTextAreaInputs에서 별도로 대조한다.
 
 원문과 줄 조각은 공백·기호·대소문자·Unicode 표현을 그대로 보존한다. 직접 지정은 1개 이상의 줄을 순서대로 연결한 내용이 원문과 정확히 같아야 한다. 자동/직접 방식은 항상 명시한다.
 
@@ -105,9 +105,17 @@ final millimeters = geometry.convertedTo(LengthUnit.millimeter);
 final restored = DrawingGeometry.fromJson(jsonDecode(jsonEncode(millimeters.toJson())));
 ```
 
-자기 교차·포함·간섭·면적·글자 배치·제작 판정은 검사하지 않는다. TextAreaDefinition/TextAreaBounds는 제거했고, 새 텍스트 영역 정의/제품 연결은 미구현이다. TextAreaInput의 원문·자동/직접 지정 입력은 유지한다.
+자기 교차·포함·간섭·면적·글자 배치·제작 판정은 검사하지 않는다. 이전 직사각 TextAreaBounds는 제거했고, 현재 TextAreaDefinition은 TextRegion을 가진 별도 업무 역할로 구현했다. 영역 입력 대조는 추가했지만 제품 전체 연결은 미구현이다. TextAreaInput의 원문·자동/직접 지정 입력은 유지한다.
 
 2026-10-25: 생성·포맷·분석 통과, 기존 입력 74+기하 31=105개 테스트 통과. assert 비활성 AOT 기하 오류 16건/입력 오류 14건과 정상 동작 확인. JSON·오류 진단·파일 구성·수치 한계·재생성/소비자 결과는 [계약 기록](docs/applied-design-geometry.md)에 있다. 이전 96개/직사각 모델 검사 결과와 구분한다.
+
+## 도안 구성과 입력 연결
+
+DesignGeometry는 coordinateSpace/outline/cutouts/textAreas를 소유한다. CutoutDefinition은 cutoutId/boundary, TextAreaDefinition은 areaId/label/region, TextRegion은 outer/exclusions로 업무 역할을 구분한다. 경계는 모두 기존 ClosedBoundary를 사용하며 형상별 홀 타입을 만들지 않는다.
+
+소유 범위의 ID 중복·빈 ID를 검사하고 목록/반환 JSON을 방어한다. copyWith는 단위를 유지하며 convertedTo는 모든 외곽/구멍/영역/제외 경계를 함께 환산한다. validateTextAreaInputs(design:, inputs:)는 중복 입력·알 수 없는 영역·누락의 issue 목록을 반환하고 입력 순서/원문/지정 줄을 바꾸지 않는다. 표시 이름은 빈 값/중복을 허용한다.
+
+정의/연결만 검증하며 포함·간섭·배치·제작/저장 가능성을 판정하지 않는다. 도안 전체 단위를 한 번 선언하고 DrawingGeometry의 무역할 목록을 이중 저장하지 않는다. 전체 153개 테스트와 assert 비활성 도안 검사는 [현재 계약과 실제 기록](docs/design-geometry.md)을 따른다.
 
 ## 기준 문서
 

@@ -1,5 +1,7 @@
 # 첫 업무 모델 설계안
 
+최신 도안 구성 값과 영역 입력 대조는 [도안 구성 계약](design-geometry.md)을 따른다. DesignGeometry/CutoutDefinition/TextAreaDefinition/TextRegion과 validateTextAreaInputs를 구현했다. 아래 이전 절의 영역 미구현 기록과 구분하며 AppliedDesign/제품 전체·배치·제작 판정은 여전히 미구현이다.
+
 현재 최소 기하 구현은 [기하 계약](applied-design-geometry.md)과 마지막 17절을 따른다. 아래 이전 직사각/원형 홀 모델과 재설계 당시의 원호 분할 권고는 과거 기록이다. 원은 중심/반지름으로 직접 보존하고 경로는 시작점 하나+끝점 구간으로 교체했다. 업무 관계는 아직 설계다.
 
 2026-10-25 후속 결정: 형상·텍스트 영역은 [도안 구성 데이터 재설계](applied-design-geometry.md)를 현재 권고로 삼는다. 아래 이전 *Mm/직사각 중심 구현 기록은 코드의 현 상태이며 새 설계 제약이 아니다. 작업/세션·원문 입력·불변 적용 도안 공유/개별 분리/명시 전체 적용의 책임은 유지한다. 새 형상 계약은 미구현이다.
