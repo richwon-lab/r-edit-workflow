@@ -2,7 +2,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
-    show pointAtCoordinates, geometryError;
+    show geometryError, pointAtCoordinates;
 
 void main() {
   group('Point2와 DrawingCoordinateSpace', () {
@@ -127,8 +127,8 @@ void main() {
         try {
           DrawingGeometry.fromJson({
             'coordinateSpace': {'lengthUnit': 'pixel'},
-            'paths': [],
-            'boundaries': [],
+            'paths': <Object?>[],
+            'boundaries': <Object?>[],
           });
           fail('지원되지 않는 단위');
         } on GeometryValidationException catch (e) {

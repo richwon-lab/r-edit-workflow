@@ -1,3 +1,6 @@
+// AOT 검사 결과를 표준 출력하고 의도한 불변성 예외를 확인한다.
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 
 import 'package:r_edit_workflow/r_edit_workflow.dart';
@@ -8,7 +11,7 @@ void main() {
   assert(() {
     assertions = true;
     return true;
-  }());
+  }(), 'AOT 실행 모드 확인');
   if (assertions) {
     throw StateError('assert 비활성 실행이 필요합니다');
   }

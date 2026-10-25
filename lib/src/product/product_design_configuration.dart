@@ -1,10 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../design/applied_design_geometry.dart';
-import 'product_design_errors.dart';
-import 'product_design_validation.dart';
-import 'product_input.dart';
-import 'product_json.dart';
+import 'package:r_edit_workflow/src/design/applied_design_geometry.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/product/product_design_validation.dart';
+import 'package:r_edit_workflow/src/product/product_input.dart';
+import 'package:r_edit_workflow/src/product/product_json.dart';
 
 part 'product_design_configuration.freezed.dart';
 part 'product_design_configuration.g.dart';

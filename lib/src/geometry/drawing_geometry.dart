@@ -1,10 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'closed_boundary.dart';
-import 'coordinate_space.dart';
-import 'geometry_errors.dart';
-import 'geometry_json.dart';
-import 'geometry_path.dart';
+import 'package:r_edit_workflow/src/geometry/closed_boundary.dart';
+import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_path.dart';
 part 'drawing_geometry.freezed.dart';
 part 'drawing_geometry.g.dart';
 

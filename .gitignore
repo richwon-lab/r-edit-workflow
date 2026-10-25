@@ -19,3 +19,7 @@ tool/model_comparison/**/build-tests.log
 # 프로젝트 전용 SDK와 실행 산출물
 .toolchains/
 /build/
+
+# 프로젝트 SDK 관리와 개발 도구 캐시
+.fvm/
+.tooling/

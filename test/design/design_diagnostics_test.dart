@@ -4,9 +4,9 @@ import 'package:test/test.dart';
 import '../support/design_builders.dart'
     show
         circleCenteredAt2,
-        textAreaWithCircularRegion,
+        designError,
         inchDesignWithIrregularOutline,
-        designError;
+        textAreaWithCircularRegion;
 
 void main() {
   group('DesignValidationException의 상세 보존', () {

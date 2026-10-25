@@ -80,7 +80,10 @@ void main() {
 
     test('빈 지정 목록 JSON을 거부한다', () {
       expect(
-        () => LineBreakInput.fromJson({'mode': 'specified', 'lines': []}),
+        () => LineBreakInput.fromJson({
+          'mode': 'specified',
+          'lines': <Object?>[],
+        }),
         inputError(TextInputErrorCode.emptySpecifiedLines, 'lineBreak.lines'),
       );
     });

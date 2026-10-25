@@ -2,7 +2,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/text_input_examples.dart'
-    show specifiedTextInputJson, textInputThroughJsonString, inputError;
+    show inputError, specifiedTextInputJson, textInputThroughJsonString;
 
 void main() {
   group('TextAreaInput 수정 후 일관성과 불변성', () {

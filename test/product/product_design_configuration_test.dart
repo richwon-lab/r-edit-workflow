@@ -397,7 +397,10 @@ void main() {
         final detail = reference.details as ProductDesignReferenceDetails;
         expect(detail.productId, 'bad');
         expect(detail.appliedGeometryId, 'g');
-        expect(detail.matchingIndices, unresolved == '없는 참조' ? [] : [0, 1]);
+        expect(
+          detail.matchingIndices,
+          unresolved == '없는 참조' ? <Object?>[] : [0, 1],
+        );
         expect(() => detail.matchingIndices.clear(), throwsUnsupportedError);
         expect(
           issues.where(
@@ -410,12 +413,12 @@ void main() {
       });
     }
     for (final field in ['appliedGeometries', 'products']) {
-      for (final value in [null, true, 0, {}]) {
+      for (final value in [null, true, 0, <String, Object?>{}]) {
         test('$field=$value의 JSON 타입 오류를 거부한다', () {
           expect(
             () => ProductDesignConfiguration.fromJson({
-              'appliedGeometries': [],
-              'products': [],
+              'appliedGeometries': <Object?>[],
+              'products': <Object?>[],
               field: value,
             }),
             productFailure(ProductDesignErrorCode.invalidType, field),
@@ -423,7 +426,8 @@ void main() {
         });
       }
       test('필수 $field를 생략하면 빈 목록으로 채우지 않는다', () {
-        final json = {'appliedGeometries': [], 'products': []}..remove(field);
+        final json = {'appliedGeometries': <Object?>[], 'products': <Object?>[]}
+          ..remove(field);
         expect(
           () => ProductDesignConfiguration.fromJson(json),
           productFailure(ProductDesignErrorCode.missingField, field),
@@ -433,7 +437,7 @@ void main() {
     test('중첩 원문 예외는 원래 원인과 최상위 제품 위치를 보존한다', () {
       try {
         ProductDesignConfiguration.fromJson({
-          'appliedGeometries': [],
+          'appliedGeometries': <Object?>[],
           'products': [
             {
               'productId': 'p',
@@ -464,7 +468,7 @@ void main() {
           'appliedGeometries': [
             {'appliedGeometryId': 'g', 'geometry': geometry},
           ],
-          'products': [],
+          'products': <Object?>[],
         });
         fail('잘못된 형상 복원 수락');
       } on ProductDesignNestedException catch (e) {
@@ -484,7 +488,7 @@ void main() {
               'source': {'sourceDesignId': false},
             },
           ],
-          'products': [],
+          'products': <Object?>[],
         }),
         productFailure(
           ProductDesignErrorCode.invalidType,
@@ -495,8 +499,8 @@ void main() {
     test('상위 JSON의 추가 필드는 버리지 않는다', () {
       expect(
         () => ProductDesignConfiguration.fromJson({
-          'appliedGeometries': [],
-          'products': [],
+          'appliedGeometries': <Object?>[],
+          'products': <Object?>[],
           'status': 'done',
         }),
         productFailure(ProductDesignErrorCode.unexpectedField, 'status'),

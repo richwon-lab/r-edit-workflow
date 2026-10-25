@@ -20,9 +20,20 @@
 - [개발 기준과 네이밍 검토](docs/development-rules-draft.md)를 따른다. 기술·언어·검증·현재 입력 네이밍은 2026-10-20 사용자 결정이다. [현재 네이밍·JSON](docs/input-naming-json.md)을 따른다.
 - 불변 값의 반복 코드는 Freezed, JSON 필드 변환은 json_serializable로 생성한다. 업무 검증은 직접 작성하고 생성·수정·복원·assert 비활성 AOT에서 확인한다.
 - 직접 작성하는 주석·API 설명·테스트 설명·개발 문서는 한국어 중심으로 쓰고 확정한 공개 이름과 sealed 타입 구분을 따른다. 초기의 이전 이름·JSON·복수 오류 순서를 배포된 호환 계약으로 취급하지 않으며 구형 지원·별칭·마이그레이션을 만들지 않는다.
-- 프로젝트 전용 .toolchains/flutter-3.47.7의 포함 Dart를 명시 경로로 실행한다. 다른 프로젝트 SDK·전역 PATH는 바꾸지 않는다. 명령과 IntelliJ 경로는 README와 docs/freezed-migration.md를 따른다.
+- 프로젝트 전용 .fvm/flutter_sdk의 포함 Dart를 사용한다. 다른 프로젝트 SDK·전역 PATH는 바꾸지 않는다. 현재 명령과 IntelliJ 경로는 README와 docs/development-foundation.md를 따른다. docs/freezed-migration.md의 경로는 당시 기록이다.
 - lib/src의 필요한 .freezed.dart·.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다. SDK·캐시·빌드·로컬 IDE 파일은 제외한다.
 
 ## 테스트 구성
 
 - 개발 기준의 [테스트 배치와 이름](docs/development-rules-draft.md#테스트-배치와-이름)과 [책임별 배치·사례 대응표](docs/test-organization.md)를 따른다. 구현 도구 대신 공개 계약별로 사례를 추가하고 파일별 독립 실행을 유지한다.
+
+## 공통 개발 기반 (2026-10-26)
+
+- [기술·SDK·검증 기준](docs/development-foundation.md)을 먼저 읽고 따른다. 과거 도구 기록보다 현재 기준이 우선한다.
+- SDK는 .fvmrc의 Flutter 3.47.7/Dart 3.13.5이며 tool/fvm.ps1로 실행한다. IntelliJ Dart는 .fvm/flutter_sdk/bin/cache/dart-sdk다. 다른 프로젝트·전역 PATH는 변경하지 않는다.
+- Freezed/json_serializable은 불변 값·필드 변환, 직접 작성한 런타임 검증은 업무 조건을 담당한다. workflow는 생성자 주입을 사용하고 Flutter/Riverpod/라우터를 넣지 않는다.
+- very_good_analysis와 strict 타입 3종을 유지한다. 테스트 대역은 Fake 우선, mocktail은 실제 필요와 호환 근거를 검토한 뒤 추가한다.
+- 의존성 추가·교체는 공식 유지/라이선스/SDK·생성기 제약·역할 중복·대안·실제 검사 결과를 기록한다. overrides나 임의 프레임워크 교체는 금지한다.
+- 새/수정 공개 API는 한국어로 단위·불변식·실패 조건을 설명한다. 오류는 책임별 전용 파일과 형식 있는 진단을 사용한다. [계약 감사](docs/library-contract-audit.md)의 기존 문서 누락을 완료로 간주하지 않는다.
+- 완료 전 ./tool/fvm.ps1 dart tool/verify.dart를 실행한다. 새 테스트 파일은 단독 실행도 확인한다. 문서 전용 변경은 링크·경로·용어만 확인하고 미실행을 기록한다.
+- 원문·JSON·오류 의미 변경을 기반 정리에 섞지 않는다. 미구현 기능·합성 결과·원격 미실행을 완료로 보고하지 않는다.

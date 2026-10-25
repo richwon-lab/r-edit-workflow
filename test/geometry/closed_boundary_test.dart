@@ -5,11 +5,11 @@ import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
     show
-        pointAtCoordinates,
-        linePathThroughVertices,
-        rectangularPath4By2,
         geometryError,
-        jsonThroughString;
+        jsonThroughString,
+        linePathThroughVertices,
+        pointAtCoordinates,
+        rectangularPath4By2;
 
 void main() {
   group('ClosedBoundary의 명시적 경계', () {

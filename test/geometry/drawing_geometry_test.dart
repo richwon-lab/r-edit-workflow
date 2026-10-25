@@ -3,11 +3,11 @@ import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
     show
-        pointAtCoordinates,
-        rectangularPath4By2,
-        inchDrawingGeometry,
         geometryError,
-        jsonThroughString;
+        inchDrawingGeometry,
+        jsonThroughString,
+        pointAtCoordinates,
+        rectangularPath4By2;
 
 void main() {
   group('DrawingGeometry의 단위 환산과 불변성', () {

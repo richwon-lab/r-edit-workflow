@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../product/product_design_errors.dart';
-import '../product/product_json.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/product/product_json.dart';
 
 part 'design_source_reference.freezed.dart';
 part 'design_source_reference.g.dart';

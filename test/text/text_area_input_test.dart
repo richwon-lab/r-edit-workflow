@@ -4,7 +4,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/text_input_examples.dart'
-    show textInputThroughJsonString, inputError;
+    show inputError, textInputThroughJsonString;
 
 void main() {
   group('TextAreaInput의 원문과 명시적 줄바꿈', () {

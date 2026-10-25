@@ -4,7 +4,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/text_input_examples.dart'
-    show automaticTextInputJson, specifiedTextInputJson, inputError;
+    show automaticTextInputJson, inputError, specifiedTextInputJson;
 
 void main() {
   group('TextAreaInput의 JSON 경계', () {

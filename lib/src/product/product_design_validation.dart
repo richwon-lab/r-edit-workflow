@@ -1,8 +1,8 @@
-import '../design/applied_design_geometry.dart';
-import '../design/design_errors.dart';
-import '../design/text_area_input_validation.dart';
-import 'product_design_errors.dart';
-import 'product_input.dart';
+import 'package:r_edit_workflow/src/design/applied_design_geometry.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
+import 'package:r_edit_workflow/src/design/text_area_input_validation.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/product/product_input.dart';
 
 /// 전달 목록의 소유 ID·참조·영역 입력을 검사하고 수정 불가 issue를 반환한다.
 /// 입력 순서를 바꾸지 않으며 오류 순서는 계약이 아니다.

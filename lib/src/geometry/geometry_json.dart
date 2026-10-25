@@ -1,4 +1,4 @@
-import 'geometry_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 
 // 이 기하 JSON 계약의 구조 검사다. 실제 업무 값은 생성자가 검사한다.
 Map<String, Object?> readGeometryObject(Object? json) {

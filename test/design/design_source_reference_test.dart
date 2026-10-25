@@ -83,7 +83,7 @@ void main() {
       expect(changed.toJson(), {'sourceDesignId': 's'});
       expect(old.sourceRevision, 'r1');
     });
-    for (final invalid in [1, true, [], {}]) {
+    for (final invalid in [1, true, <Object?>[], <String, Object?>{}]) {
       test('sourceRevision=$invalid의 타입을 거부한다', () {
         expect(
           () => DesignSourceReference.fromJson({

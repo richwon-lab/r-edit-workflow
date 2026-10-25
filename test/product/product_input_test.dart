@@ -48,7 +48,7 @@ void main() {
           final json = {
             'productId': 'p',
             'appliedGeometryId': 'g',
-            'textInputs': [],
+            'textInputs': <Object?>[],
           };
           expect(
             () => switch (route) {
@@ -141,7 +141,7 @@ void main() {
         final json = {
           'productId': 'p',
           'appliedGeometryId': 'g',
-          'textInputs': [],
+          'textInputs': <Object?>[],
         }..remove(field);
         expect(
           () => ProductInput.fromJson(json),
@@ -153,7 +153,7 @@ void main() {
           () => ProductInput.fromJson({
             'productId': 'p',
             'appliedGeometryId': 'g',
-            'textInputs': [],
+            'textInputs': <Object?>[],
             field: null,
           }),
           productFailure(ProductDesignErrorCode.invalidType, field),

@@ -1,9 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import '../product/product_design_errors.dart';
-import '../product/product_json.dart';
-import 'design_geometry.dart';
-import 'design_source_reference.dart';
+import 'package:r_edit_workflow/src/design/design_geometry.dart';
+import 'package:r_edit_workflow/src/design/design_source_reference.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/product/product_json.dart';
 
 part 'applied_design_geometry.freezed.dart';
 part 'applied_design_geometry.g.dart';

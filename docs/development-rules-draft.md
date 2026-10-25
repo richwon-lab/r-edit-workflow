@@ -1,3 +1,5 @@
+> 현재 개발 기준(2026-10-26): [공통 기반](development-foundation.md), [라이브러리 계약 감사](library-contract-audit.md).
+> 현재 SDK/명령/분석 기준은 위 문서가 우선하며 아래 날짜별 기록은 당시 사실을 보존한다.
 # 개발 기준과 네이밍
 
 2026-10-20 사용자 결정. 파일 이름은 유지하지만 아래 내용은 채택된 기준이다. 초기 이름과 JSON을 배포된 호환 계약으로 취급하지 않는다. 과거 후보 비교는 Git 이력과 [전환 기록](freezed-migration.md)에 남고 현재 결정은 [네이밍·JSON 정리](input-naming-json.md)를 따른다.

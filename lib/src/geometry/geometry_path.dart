@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'coordinate_space.dart';
-import 'geometry_errors.dart';
-import 'geometry_json.dart';
-import 'path_segments.dart';
-import 'point2.dart';
+import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
+import 'package:r_edit_workflow/src/geometry/path_segments.dart';
+import 'package:r_edit_workflow/src/geometry/point2.dart';
 part 'geometry_path.freezed.dart';
 part 'geometry_path.g.dart';
 
@@ -24,7 +24,7 @@ final class GeometryPath with _$GeometryPath {
   GeometryPath({required this.start, required List<PathSegment> segments})
     : segments = List.unmodifiable(segments) {
     if (this.segments.isEmpty) {
-      throw GeometryValidationException(
+      throw const GeometryValidationException(
         GeometryErrorCode.emptyPath,
         'segments',
         GeometryDiagnostic(operation: 'checkPathSegments'),

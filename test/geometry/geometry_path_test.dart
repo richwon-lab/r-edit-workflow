@@ -2,7 +2,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
-    show pointAtCoordinates, rectangularPath4By2, geometryError;
+    show geometryError, pointAtCoordinates, rectangularPath4By2;
 
 void main() {
   group('GeometryPath의 구간 연결', () {

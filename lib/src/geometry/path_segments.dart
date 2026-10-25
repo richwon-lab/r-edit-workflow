@@ -1,8 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'geometry_errors.dart';
-import 'geometry_json.dart';
-import 'point2.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
+import 'package:r_edit_workflow/src/geometry/point2.dart';
 part 'path_segments.freezed.dart';
 part 'path_segments.g.dart';
 

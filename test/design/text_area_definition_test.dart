@@ -6,11 +6,11 @@ import 'package:test/test.dart';
 import '../support/design_builders.dart'
     show
         circleCenteredAt2,
-        textAreaWithCircularRegion,
-        inchDesignWithIrregularOutline,
-        textInputForArea,
+        designError,
         designJsonThroughString,
-        designError;
+        inchDesignWithIrregularOutline,
+        textAreaWithCircularRegion,
+        textInputForArea;
 
 void main() {
   group('TextAreaDefinition의 식별과 표시 이름', () {

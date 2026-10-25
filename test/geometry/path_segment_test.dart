@@ -2,7 +2,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
-    show pointAtCoordinates, geometryError;
+    show geometryError, pointAtCoordinates;
 
 void main() {
   group('PathSegment의 선분·원호 입력', () {

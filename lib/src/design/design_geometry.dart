@@ -1,12 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import '../geometry/closed_boundary.dart';
-import '../geometry/coordinate_space.dart';
-import '../geometry/geometry_errors.dart';
-import 'design_json.dart';
-import 'design_errors.dart';
-import 'cutout_definition.dart';
-import 'text_area_definition.dart';
+import 'package:r_edit_workflow/src/design/cutout_definition.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
+import 'package:r_edit_workflow/src/design/design_json.dart';
+import 'package:r_edit_workflow/src/design/text_area_definition.dart';
+import 'package:r_edit_workflow/src/geometry/closed_boundary.dart';
+import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 
 part 'design_geometry.freezed.dart';
 part 'design_geometry.g.dart';

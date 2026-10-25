@@ -1,16 +1,16 @@
 import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
-import '../support/geometry_builders.dart' show pointAtCoordinates;
 import '../support/design_builders.dart'
     show
         circleCenteredAt2,
+        designError,
+        designJsonThroughString,
+        inchDesignWithIrregularOutline,
         rectangularBoundary4By2,
         slotBoundaryFrom1To3,
-        textAreaWithCircularRegion,
-        inchDesignWithIrregularOutline,
-        designJsonThroughString,
-        designError;
+        textAreaWithCircularRegion;
+import '../support/geometry_builders.dart' show pointAtCoordinates;
 
 void main() {
   group('DesignGeometry의 소유권과 전체 환산', () {

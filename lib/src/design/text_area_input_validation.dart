@@ -1,6 +1,6 @@
-import '../text_area_input.dart';
-import 'design_errors.dart';
-import 'design_geometry.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
+import 'package:r_edit_workflow/src/design/design_geometry.dart';
+import 'package:r_edit_workflow/src/text_area_input.dart';
 
 /// 각 도안 영역에 입력 하나가 대응하는지 ID로 대조하고 모든 연결 오류를 반환한다.
 /// 입력 순서/원문/줄바꿈을 바꾸지 않는다. label/좌표로 추정하지 않는다.

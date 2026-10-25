@@ -3,8 +3,8 @@ import 'package:test/test.dart';
 
 import '../support/design_builders.dart'
     show
-        textAreaWithCircularRegion,
         inchDesignWithIrregularOutline,
+        textAreaWithCircularRegion,
         textInputForArea;
 
 void main() {

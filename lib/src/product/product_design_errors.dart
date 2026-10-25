@@ -1,4 +1,4 @@
-import '../design/design_errors.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
 
 /// 제품 값·JSON·참조의 오류다. 기하·문구 판정 코드를 대신하지 않는다.
 enum ProductDesignErrorCode {

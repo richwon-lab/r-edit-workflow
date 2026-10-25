@@ -1,8 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import '../text_area_input.dart';
-import 'product_design_errors.dart';
-import 'product_json.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/product/product_json.dart';
+import 'package:r_edit_workflow/src/text_area_input.dart';
 
 part 'product_input.freezed.dart';
 part 'product_input.g.dart';

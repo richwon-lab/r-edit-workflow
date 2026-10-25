@@ -4,7 +4,7 @@ import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
 import '../support/geometry_builders.dart'
-    show pointAtCoordinates, jsonThroughString;
+    show jsonThroughString, pointAtCoordinates;
 
 GeometryPath singleArcPath(
   double sx,
@@ -22,14 +22,17 @@ GeometryPath singleArcPath(
   ],
 );
 (double, double) rotate(double x, double y, int turns) {
+  var rotatedX = x;
+  var rotatedY = y;
   for (var i = 0; i < turns; i++) {
-    final previous = x;
-    x = -y;
-    y = previous;
+    final previous = rotatedX;
+    rotatedX = -rotatedY;
+    rotatedY = previous;
   }
-  return (x, y);
+  return (rotatedX, rotatedY);
 }
 
+// 좌표 회귀 행렬의 기존 호출 순서를 유지한다.
 GeometryPath rotatedArc(
   double sx,
   double sy,
@@ -37,6 +40,7 @@ GeometryPath rotatedArc(
   double ey,
   double bulge,
   int turns,
+  // ignore: avoid_positional_boolean_parameters
   bool reverse,
 ) {
   final (ax, ay) = rotate(sx, sy, turns);
@@ -46,7 +50,7 @@ GeometryPath rotatedArc(
       : singleArcPath(ax, ay, bx, by, bulge);
 }
 
-const directions = [
+const List<GeometryExtremumDirection> directions = [
   GeometryExtremumDirection.positiveX,
   GeometryExtremumDirection.positiveY,
   GeometryExtremumDirection.negativeX,

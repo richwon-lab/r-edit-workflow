@@ -2,7 +2,7 @@
 
 현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집과 현재 참조 검증까지 구현했으며 완전한 제작 도안·작업 파일·변경 명령은 아니다.
 
-현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 외곽·관통 구멍·텍스트 영역의 [도안 구성과 입력 연결 검증](docs/design-geometry.md)을 구현했다. 전체 적용 도안·제품·계산/제작 기능은 아직 없다.
+현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 외곽·관통 구멍·텍스트 영역의 [도안 구성과 입력 연결 검증](docs/design-geometry.md)을 구현했다. 전체 제작 조건을 포함한 적용 도안·계산/제작 기능은 아직 없다. 제품 입력/참조 구성은 위 계약 범위로 구현했다.
 
 R-edit의 작업 데이터, 변경 영향, 결과 확인 및 저장·출력 흐름을 담당하는 순수 Dart 라이브러리다.
 
@@ -66,30 +66,36 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 | sourceContainsCrLf / specifiedLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF |
 | specifiedLinesMismatchSourceText | 지정 줄의 연결 내용과 원문 불일치 |
 
-값 비교·복사에는 Freezed 4.0.3, JSON 필드 변환에는 json_serializable 6.14.1을 사용한다. 업무 검증과 오류 경계는 직접 작성한다. runtime annotation 3.1.0/4.12.0, build_runner 2.16.2를 채택했고 기존 lints·test 제약은 유지했다. 이 작은 JSON은 전체 문서 형식이 아니다.
+값 비교·복사에는 Freezed 4.0.3, JSON 필드 변환에는 json_serializable 6.15.2을 사용한다. 업무 검증과 오류 경계는 직접 작성한다. runtime annotation 3.1.0/4.12.0, build_runner 2.16.2를 채택했고 test 제약은 유지하고 분석은 very_good_analysis 11.0.0과 strict 타입 검사로 통일했다. 이 작은 JSON은 전체 문서 형식이 아니다.
 
 ## 개발과 검증
 
 [책임별 테스트 파일과 기존 사례 대응표](docs/test-organization.md)에 테스트 배치·명명 기준과 실제 실행 결과를 기록한다.
 
-프로젝트 전용 `.toolchains/flutter-3.47.7`의 포함 Dart 3.13.5 stable을 사용하며 SDK 제약은 `^3.13.5`다. 패키지 runtime은 Flutter에 의존하지 않는다. 공유 SDK·전역 PATH는 변경하지 않는다. 영구 SDK·IntelliJ 경로와 소비자 영향은 [전환 기록](docs/freezed-migration.md)에 있다.
+현재 [공통 개발 기반](docs/development-foundation.md)을 따른다. Flutter 3.47.7에 포함된 Dart 3.13.5를
+FVM 4.3.2로 고정한다. runtime은 순수 Dart이며 Flutter/Riverpod/라우터에 의존하지 않는다.
+IntelliJ Dart 경로는 이 저장소의 .fvm/flutter_sdk/bin/cache/dart-sdk다.
+최초 bootstrap 경로 지정·독립 설치·버전 선택 이유는 공통 기반 문서에 있다.
 
-```powershell
-$workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe"
-& $workflowDart pub get
-& $workflowDart run build_runner build
-& $workflowDart format lib test tool/verify_text_input_release.dart
-& $workflowDart analyze
-& $workflowDart test
-```
+~~~powershell
+./tool/fvm.ps1 -BootstrapDart 'C:\개발SDK\bin\cache\dart-sdk\bin\dart.exe' use 3.47.7 --force --skip-pub-get
+./tool/fvm.ps1 dart tool/verify.dart
+./tool/fvm.ps1 dart run example/product_configuration.dart
+~~~
 
+검증 도구는 생성·포맷·분석·전체 테스트·재생성 안정성·5개 AOT·독립 소비자를 검사한다.
+[소비자 예제](example/product_configuration.dart)는 공개 API로 형상/영역/제품 참조와 JSON 왕복을 구성한다.
+소비자가 생성하지 않도록 생성 소스를 추적한다.
+2026-10-26 로컬 417개 테스트와 AOT/소비자 실행이 성공했다.
+[계약 감사](docs/library-contract-audit.md)에 실제 보장과 개별 API 설명 누락 141건을 기록했다.
+Actions는 무료 운용 경계를 설정했으며 원격 실행은 하지 않았다.
 현재 네이밍·JSON과 실제 검사 결과는 [초기 정리 기록](docs/input-naming-json.md)에 있다. 이전 70개 테스트·AOT 실행 결과는 [당시 전환 기록](docs/freezed-migration.md)에 보존한다.
 이 결과는 영역 입력 모델 검증이며 실제 배치·저장·출력·Type3 검증이 아니다.
 라이브러리 pubspec.lock, .dart_tool, .toolchains, build, IDE 설정과 로컬 override는 Git 관리에서 제외한다. 필요한 lib/src/*.freezed.dart와 *.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다.
 
 ## 아직 구현하지 않은 범위
 
-WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업자 확인, 엔진·DXF·파일 I/O·Flutter 연결은 미구현이다. 앱 → 업무 흐름 → 배치 엔진·DXF의 공개 API 의존 방향을 유지하며 아직 없는 패키지를 선언하지 않는다.
+WorkDocument 전체, WorkSession, 전체 제작 조건의 적용 도안·수량·그룹·결과·작업자 확인, 엔진·DXF·파일 I/O·Flutter 연결은 미구현이다. 앱 → 업무 흐름 → 배치 엔진·DXF의 공개 API 의존 방향을 유지하며 아직 없는 패키지를 선언하지 않는다.
 
 ## 최소 기하 값
 

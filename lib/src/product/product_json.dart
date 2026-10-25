@@ -1,7 +1,7 @@
-import '../design/design_errors.dart';
-import '../geometry/geometry_errors.dart';
-import '../text_area_input.dart';
-import 'product_design_errors.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
+import 'package:r_edit_workflow/src/product/product_design_errors.dart';
+import 'package:r_edit_workflow/src/text_area_input.dart';
 
 // 제품 구성의 값/JSON 경계에서 실제로 공유하는 검사다. 공개 export하지 않는다.
 Never rejectProductValue(
@@ -70,7 +70,7 @@ void checkProductFields(Map<String, Object?> object, Set<String> allowed) {
   }
 }
 
-List readProductList(Object? value, String path) {
+List<Object?> readProductList(Object? value, String path) {
   if (value is! List) {
     rejectProductValue(
       ProductDesignErrorCode.invalidType,

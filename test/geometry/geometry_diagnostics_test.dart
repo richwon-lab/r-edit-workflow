@@ -38,7 +38,7 @@ void main() {
       test('중첩 복원은 파생 오류 진단과 부모 경로를 보존한다', () {
         final json = {
           'coordinateSpace': {'lengthUnit': 'millimeter'},
-          'paths': [],
+          'paths': <Object?>[],
           'boundaries': [
             {
               'kind': 'path',
@@ -113,7 +113,7 @@ void main() {
         try {
           DrawingGeometry.fromJson({
             'coordinateSpace': {'lengthUnit': 'millimeter'},
-            'paths': [],
+            'paths': <Object?>[],
             'boundaries': [
               {
                 'kind': 'circle',
@@ -167,7 +167,7 @@ void main() {
           () => DrawingGeometry.fromJson({
             'coordinateSpace': {'lengthUnit': 'inch'},
             'paths': 0,
-            'boundaries': [],
+            'boundaries': <Object?>[],
           }),
           'List',
           'int',
@@ -175,7 +175,7 @@ void main() {
         (
           () => DrawingGeometry.fromJson({
             'coordinateSpace': {'lengthUnit': 'inch'},
-            'paths': [],
+            'paths': <Object?>[],
             'boundaries': false,
           }),
           'List',
@@ -227,7 +227,7 @@ void main() {
       test('중첩 원호 JSON의 코드·위치·진단은 복원/접두사 연결에서 보존된다', () {
         final json = {
           'coordinateSpace': {'lengthUnit': 'millimeter'},
-          'paths': [],
+          'paths': <Object?>[],
           'boundaries': [
             {
               'kind': 'path',

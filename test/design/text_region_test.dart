@@ -4,10 +4,10 @@ import 'package:test/test.dart';
 import '../support/design_builders.dart'
     show
         circleCenteredAt2,
+        designError,
         rectangularBoundary4By2,
         slotBoundaryFrom1To3,
-        textAreaWithCircularRegion,
-        designError;
+        textAreaWithCircularRegion;
 
 void main() {
   group('TextRegion의 외부·제외 경계', () {

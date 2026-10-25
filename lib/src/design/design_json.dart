@@ -1,6 +1,6 @@
-import '../geometry/closed_boundary.dart';
-import '../geometry/geometry_errors.dart';
-import 'design_errors.dart';
+import 'package:r_edit_workflow/src/design/design_errors.dart';
+import 'package:r_edit_workflow/src/geometry/closed_boundary.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 
 // 도안 모델에서 실제로 공유하는 JSON 구조 검사와 경계 직렬화다.
 // 패키지 공개 진입점에서는 노출하지 않는다.
@@ -58,7 +58,7 @@ void checkDesignFields(Map<String, Object?> object, Set<String> allowed) {
   }
 }
 
-List readDesignList(Object? json, String fieldPath) {
+List<Object?> readDesignList(Object? json, String fieldPath) {
   if (json is! List) {
     throw DesignValidationException(
       DesignValidationIssue(

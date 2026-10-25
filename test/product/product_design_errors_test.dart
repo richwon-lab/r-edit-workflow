@@ -75,7 +75,7 @@ void main() {
               'source': {'sourceDesignId': false},
             },
           ],
-          'products': [],
+          'products': <Object?>[],
         });
         fail('타입 오류 허용');
       } on ProductDesignValidationException catch (e) {
@@ -109,7 +109,7 @@ void main() {
           'appliedGeometries': [
             {'appliedGeometryId': 'g', 'geometry': geometry},
           ],
-          'products': [],
+          'products': <Object?>[],
         });
         fail('빈 영역 ID 허용');
       } on ProductDesignNestedException catch (e) {

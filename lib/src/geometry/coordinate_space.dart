@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'geometry_errors.dart';
-import 'geometry_json.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
+import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
 part 'coordinate_space.freezed.dart';
 part 'coordinate_space.g.dart';
 
