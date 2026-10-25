@@ -1,10 +1,12 @@
 # r_edit_workflow
 
+현재 형상 계약의 권고안은 [데이터 구성 중심 재설계](docs/applied-design-geometry.md)다. 아래 네 값 모델과 *Mm JSON은 현재 코드 상태 설명이며 유지해야 할 호환 계약이 아니다. 새 선분/원호·단위 문맥·영역/가공/장식 역할은 아직 구현하지 않았다. 기존 미커밋 코드와 테스트는 보존했다.
+
 R-edit의 작업 데이터, 변경 영향, 결과 확인 및 저장·출력 흐름을 담당하는 순수 Dart 라이브러리다.
 
 ## 현재 구현
 
-영역별 원문·자동/직접 지정 줄바꿈의 불변 값과 검증, JSON 변환만 구현했다.
+영역별 원문·자동/직접 지정 줄바꿈의 불변 값과 검증, JSON 변환과 첫 형상·텍스트 영역 값 모델을 구현했다.
 공개 진입점은 `lib/r_edit_workflow.dart`, 구현은 `lib/src/text_area_input.dart`다.
 
 - `TextAreaInput(areaId:, sourceText:, lineBreak:)`: 영역 원문과 줄바꿈을 하나의 유효한 값으로 생성한다. 제품 전체가 아닌 영역 입력이라는 책임을 드러내기 위해 설계 후보 ProductTextInput 대신 이 이름을 선택했다.
@@ -85,9 +87,15 @@ $workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe
 
 WorkDocument 전체, WorkSession, 적용 도안·수량·그룹·결과·작업자 확인, 엔진·DXF·파일 I/O·Flutter 연결은 미구현이다. 앱 → 업무 흐름 → 배치 엔진·DXF의 공개 API 의존 방향을 유지하며 아직 없는 패키지를 선언하지 않는다.
 
-## 적용 도안·영역 설계 상태
+## 현재 코드의 형상·텍스트 영역 값 (새 설계와 다름)
 
-[첫 형상·영역 설계](docs/applied-design-geometry.md)는 mm·명판 좌표계와 직사각 외곽/영역·원형 홀의 첫 지원안을 제안한다. 도안 공유·영역 ID 대응·변경·제작 조건·검증 경계를 정리했으며 업무 코드로 구현하지 않았다. 다음 최소 구현은 제안 검토 후 형상·영역의 불변 값과 검증·JSON 왕복이다.
+공개 모델은 RectangularPlateGeometry(widthMm:, heightMm:, holes:), CircularHole(holeId:, centerXMm:, centerYMm:, diameterMm:), TextAreaBounds(xMm:, yMm:, widthMm:, heightMm:), TextAreaDefinition(areaId:, label:, bounds:)다. mm·명판 왼쪽 아래 원점·+X 오른쪽/+Y 위쪽을 사용한다.
+
+유한 숫자·양수 치수·파생 경계의 유한성·빈 ID와 소유 holes의 ID 중복을 검사한다. label은 필수 String이며 빈 문자열도 허용하고 보정하지 않는다. JSON 정수/소수를 double로 받으며 종류 판별자는 없다. GeometryValidationException의 code/fieldPath와 GeometryErrorCode로 입력 모델 오류와 구분한다. 생성/copyWith/복원에 같은 검증을 적용하고 목록·출력 JSON을 방어한다.
+
+명판 포함·홀/영역 간섭·글자 충돌·제작 가능성과 제품 참조는 검사하지 않는다. 영역-홀 겹침과 판 밖 좌표도 표현한다. AppliedDesign 전체와 제작 조건은 미구현이다.
+
+2026-10-25: 생성·포맷·분석 성공, 기존 입력 74개와 새 형상 22개 테스트 통과. assert 비활성 AOT는 형상 오류 17건/입력 오류 14건 및 정상 동작 확인. 생성 파일 재생성 일치와 생성 없는 별도 path 소비자 AOT도 통과했다. 이전 구현 검사와 새 설계의 구분은 [형상 설계 10절](docs/applied-design-geometry.md#10-이전-값-모델-구현-기록-현행-설계와-구분)에 있다.
 
 ## 기준 문서
 
