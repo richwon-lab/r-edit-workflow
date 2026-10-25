@@ -3,363 +3,435 @@ import 'dart:convert';
 import 'package:r_edit_workflow/r_edit_workflow.dart';
 import 'package:test/test.dart';
 
-CircularHole hole({
-  String id = 'h',
-  double x = 10,
-  double y = 10,
-  double diameter = 4,
-}) =>
-    CircularHole(holeId: id, centerXMm: x, centerYMm: y, diameterMm: diameter);
-TextAreaBounds bounds() =>
-    TextAreaBounds(xMm: 5, yMm: 5, widthMm: 110, heightMm: 50);
-Map<String, Object?> decoded(Object value) =>
-    jsonDecode(jsonEncode(value)) as Map<String, Object?>;
-Matcher invalid(GeometryErrorCode code, String path) => throwsA(
+Point2 p(double x, double y) => Point2(x: x, y: y);
+GeometryPath polygon(List<Point2> points) => GeometryPath(
+  start: points.first,
+  segments: [for (final end in points.skip(1)) LineTo(end: end)],
+);
+GeometryPath rectangle() =>
+    polygon([p(0, 0), p(4, 0), p(4, 2), p(0, 2), p(0, 0)]);
+DrawingGeometry drawing({
+  List<GeometryPath>? paths,
+  List<ClosedBoundary>? boundaries,
+  LengthUnit unit = LengthUnit.inch,
+}) => DrawingGeometry(
+  coordinateSpace: DrawingCoordinateSpace(lengthUnit: unit),
+  paths: paths ?? [],
+  boundaries: boundaries ?? [],
+);
+Object? roundTripJson(Object? json) => jsonDecode(jsonEncode(json));
+Matcher rejects(GeometryErrorCode code, String path) => throwsA(
   isA<GeometryValidationException>()
       .having((e) => e.code, 'code', code)
       .having((e) => e.fieldPath, 'fieldPath', path),
 );
 
 void main() {
-  test('홀 없는 판과 3열 2행 홀은 실제 좌표와 순서를 왕복한다', () {
-    final holes = [
-      for (final y in [15.0, 45.0])
-        for (final x in [20.0, 60.0, 100.0]) hole(id: '$x:$y', x: x, y: y),
-    ];
-    for (final list in [<CircularHole>[], holes]) {
-      final plate = RectangularPlateGeometry(
-        widthMm: 120,
-        heightMm: 60,
-        holes: list,
+  test('직사각형과 새 비정형 다각형은 같은 선분 데이터로 닫힌 경계를 만든다', () {
+    final irregular = polygon([
+      p(-2, -1),
+      p(3, -1),
+      p(4, 1),
+      p(1, 3),
+      p(-2, 2),
+      p(-2, -1),
+    ]);
+    for (final path in [rectangle(), irregular]) {
+      final boundary = PathBoundary(path: path);
+      final restored = ClosedBoundary.fromJson(
+        roundTripJson(boundary.toJson()),
       );
-      final restored = RectangularPlateGeometry.fromJson(
-        decoded(plate.toJson()),
-      );
-      expect(restored, plate);
-      expect(restored.holes, list);
-      expect(restored.hashCode, plate.hashCode);
-    }
-    expect(holes.map((h) => h.centerXMm), [20, 60, 100, 20, 60, 100]);
-  });
-
-  test('정수와 소수 JSON은 double로 변환하고 값과 표시 문자열을 보정하지 않는다', () {
-    final value = CircularHole.fromJson(
-      jsonDecode(
-        '{"holeId":" h ","centerXMm":-2,"centerYMm":1.23456789012345,"diameterMm":4}',
-      ),
-    );
-    expect(value.centerXMm, isA<double>());
-    expect(value.centerYMm, 1.23456789012345);
-    expect(CircularHole.fromJson(decoded(value.toJson())), value);
-    final rectangle = TextAreaBounds.fromJson({
-      'xMm': -1,
-      'yMm': 2.25,
-      'widthMm': 12,
-      'heightMm': 3.5,
-    });
-    for (final label in ['', '  본문 e\u0301 👩‍🔧  ']) {
-      final area = TextAreaDefinition(
-        areaId: ' a ',
-        label: label,
-        bounds: rectangle,
-      );
-      final restored = TextAreaDefinition.fromJson(decoded(area.toJson()));
-      expect(restored, area);
-      expect(restored.label, label);
-      expect(restored.areaId, ' a ');
-    }
-  });
-
-  test('전달 목록과 반환 JSON을 바꾸어도 원래 판과 홀은 유지된다', () {
-    final list = [hole()];
-    final plate = RectangularPlateGeometry(
-      widthMm: 36,
-      heightMm: 36,
-      holes: list,
-    );
-    list.clear();
-    expect(plate.holes.single.holeId, 'h');
-    expect(() => plate.holes.clear(), throwsUnsupportedError);
-    final json = plate.toJson();
-    final output = json['holes'] as List;
-    (output.single as Map)['holeId'] = 'changed';
-    output.clear();
-    json['widthMm'] = 999;
-    expect(plate.holes.single.holeId, 'h');
-    expect(plate.widthMm, 36);
-    final incoming = plate.toJson();
-    final restored = RectangularPlateGeometry.fromJson(incoming);
-    (incoming['holes'] as List).clear();
-    expect(restored, plate);
-    final area = TextAreaDefinition(areaId: 'a', label: '', bounds: bounds());
-    final areaJson = area.toJson();
-    (areaJson['bounds'] as Map)['widthMm'] = 0;
-    expect(area.bounds.widthMm, 110);
-  });
-
-  test('copyWith는 검증하고 목록을 복사하며 치수 변경으로 홀을 확대하지 않는다', () {
-    final original = RectangularPlateGeometry(
-      widthMm: 36,
-      heightMm: 36,
-      holes: [hole()],
-    );
-    final changed = original.copyWith(widthMm: 40);
-    expect(changed.holes, original.holes);
-    expect(original.widthMm, 36);
-    final incoming = [hole(id: 'new')];
-    final next = changed.copyWith(holes: incoming);
-    incoming.clear();
-    expect(next.holes.single.holeId, 'new');
-    expect(original.holes.single.holeId, 'h');
-    expect(
-      () => original.copyWith(heightMm: 0),
-      invalid(GeometryErrorCode.nonPositiveDimension, 'heightMm'),
-    );
-    final area = TextAreaDefinition(areaId: 'a', label: '', bounds: bounds());
-    final moved = area.copyWith(bounds: area.bounds.copyWith(xMm: -100));
-    final chained = area.copyWith.bounds(widthMm: 120);
-    expect(chained.bounds.widthMm, 120);
-    expect(area.bounds.widthMm, 110);
-    expect(
-      () => area.copyWith.bounds(widthMm: 0),
-      invalid(GeometryErrorCode.nonPositiveDimension, 'widthMm'),
-    );
-    expect(moved.areaId, 'a');
-    expect(area.bounds.xMm, 5);
-    expect(
-      () => area.copyWith(areaId: ''),
-      invalid(GeometryErrorCode.emptyAreaId, 'areaId'),
-    );
-    expect(
-      () => hole().copyWith(holeId: ''),
-      invalid(GeometryErrorCode.emptyHoleId, 'holeId'),
-    );
-  });
-
-  test('소유한 목록의 홀 ID 중복은 생성·수정·복원에서 거부한다', () {
-    final plate = RectangularPlateGeometry(
-      widthMm: 36,
-      heightMm: 36,
-      holes: [hole()],
-    );
-    for (final run in <void Function()>[
-      () => RectangularPlateGeometry(
-        widthMm: 36,
-        heightMm: 36,
-        holes: [hole(), hole(x: 20)],
-      ),
-      () => plate.copyWith(holes: [hole(), hole()]),
-      () => RectangularPlateGeometry.fromJson({
-        'widthMm': 36,
-        'heightMm': 36,
-        'holes': [hole().toJson(), hole().toJson()],
-      }),
-    ]) {
+      expect(restored, boundary);
+      expect(restored.hashCode, boundary.hashCode);
+      expect((restored as PathBoundary).path.segments.last.end, path.start);
+      expect(path.toJson().containsKey('isClosed'), isFalse);
       expect(
-        run,
-        invalid(GeometryErrorCode.duplicateHoleId, 'holes[1].holeId'),
+        (path.toJson()['segments'] as List).every(
+          (s) => (s as Map).containsKey('start'),
+        ),
+        isFalse,
       );
     }
-    expect(plate.holes, hasLength(1));
   });
-
-  final cases = <(String, Map<String, Object?>, Object Function(Object?))>[
+  test('독립 원은 중심과 반지름만 정본으로 보관하고 정수 JSON을 받는다', () {
+    final circle = ClosedBoundary.fromJson(
+      jsonDecode('{"kind":"circle","center":{"x":-2,"y":3.5},"radius":4}'),
+    ) as CircleBoundary;
+    expect(circle.radius, isA<double>());
+    expect(circle.center, p(-2, 3.5));
+    expect(circle.toJson().keys, unorderedEquals(['kind', 'center', 'radius']));
+    expect(ClosedBoundary.fromJson(roundTripJson(circle.toJson())), circle);
+    expect(circle.copyWith(radius: 5).radius, 5);
+    expect(circle.radius, 4);
+  });
+  test('선분과 반원 구간을 잇는 장공은 시작점 중복 없이 왕복한다', () {
+    final path = GeometryPath(
+      start: p(10, 8),
+      segments: [
+        LineTo(end: p(20, 8)),
+        ArcTo(end: p(20, 12), bulge: 1),
+        LineTo(end: p(10, 12)),
+        ArcTo(end: p(10, 8), bulge: 1),
+      ],
+    );
+    expect(
+      ClosedBoundary.fromJson(roundTripJson(PathBoundary(path: path).toJson())),
+      PathBoundary(path: path),
+    );
+    expect(path.segments.whereType<ArcTo>(), hasLength(2));
+  });
+  for (final bulge in [
+    2.0,
+    -2.0,
+    1.0,
+    -1.0,
+    0.5,
+    -0.5,
+    1e200,
+    -1e200,
+    1e-200,
+    -1e-200,
+  ]) {
+    test('원호의 양방향·반원 초과·큰 bulge를 보정하지 않는다: $bulge', () {
+      final path = GeometryPath(
+        start: p(0, 0),
+        segments: [ArcTo(end: p(2, 0), bulge: bulge)],
+      );
+      final restored = GeometryPath.fromJson(roundTripJson(path.toJson()));
+      expect(restored, path);
+      expect((restored.segments.single as ArcTo).bulge, bulge);
+    });
+  }
+  test('구간은 시작점과 무관한 값만, 경로는 퇴화 여부를 검사한다', () {
+    final line = LineTo(end: p(1, 2));
+    final arc = ArcTo(end: p(1, 2), bulge: 2);
+    for (final segment in [line, arc]) {
+      expect(
+        () => GeometryPath(start: p(1, 2), segments: [segment]),
+        rejects(GeometryErrorCode.degenerateSegment, 'segments[0].end'),
+      );
+      expect(
+        GeometryPath(start: p(0, 0), segments: [segment]).segments.single,
+        segment,
+      );
+    }
+    final original = rectangle();
+    expect(
+      () => original.copyWith(start: p(4, 0)),
+      rejects(GeometryErrorCode.degenerateSegment, 'segments[0].end'),
+    );
+    expect(
+      () => original.copyWith(segments: []),
+      rejects(GeometryErrorCode.emptyPath, 'segments'),
+    );
+    expect(
+      () => GeometryPath.fromJson({
+        'start': p(1, 2).toJson(),
+        'segments': [line.toJson()],
+      }),
+      rejects(GeometryErrorCode.degenerateSegment, 'segments[0].end'),
+    );
+  });
+  test('닫히지 않은 경로를 플래그로 고치거나 선분을 추가하지 않는다', () {
+    final open = GeometryPath(
+      start: p(0, 0),
+      segments: [LineTo(end: p(2, 0))],
+    );
+    expect(
+      () => PathBoundary(path: open),
+      rejects(GeometryErrorCode.openBoundary, 'path.segments[0].end'),
+    );
+    final boundary = PathBoundary(path: rectangle());
+    expect(
+      () => boundary.copyWith(path: open),
+      rejects(GeometryErrorCode.openBoundary, 'path.segments[0].end'),
+    );
+    expect(
+      () => ClosedBoundary.fromJson({'kind': 'path', 'path': open.toJson()}),
+      rejects(GeometryErrorCode.openBoundary, 'path.segments[0].end'),
+    );
+    expect(
+      () => GeometryPath.fromJson({...open.toJson(), 'isClosed': true}),
+      rejects(GeometryErrorCode.unexpectedField, 'isClosed'),
+    );
+  });
+  test('원이 아닌 자유 구멍도 같은 경계 타입이며 자기 교차나 영면적은 아직 검사하지 않는다', () {
+    final crossing = polygon([p(0, 0), p(2, 2), p(0, 2), p(2, 0), p(0, 0)]);
+    expect(PathBoundary(path: crossing).path, crossing);
+    final backtrack = polygon([p(0, 0), p(1, 0), p(0, 0)]);
+    expect(PathBoundary(path: backtrack).path, backtrack);
+  });
+  test('단위 환산은 문맥·모든 좌표·반지름을 바꾸고 bulge를 보존한다', () {
+    final arcPath = GeometryPath(
+      start: p(-1, 0),
+      segments: [ArcTo(end: p(1, 0), bulge: -2)],
+    );
+    final original = drawing(
+      paths: [arcPath],
+      boundaries: [
+        PathBoundary(path: rectangle()),
+        CircleBoundary(center: p(1, 0.5), radius: 0.25),
+      ],
+    );
+    final mm = original.convertedTo(LengthUnit.millimeter);
+    expect(mm.coordinateSpace.lengthUnit, LengthUnit.millimeter);
+    expect(mm.paths.single.start, p(-25.4, 0));
+    expect(mm.paths.single.segments.single.end, p(25.4, 0));
+    expect((mm.paths.single.segments.single as ArcTo).bulge, -2);
+    expect((mm.boundaries.last as CircleBoundary).center, p(25.4, 12.7));
+    expect((mm.boundaries.last as CircleBoundary).radius, 6.35);
+    expect(
+      (mm.boundaries.first as PathBoundary).path.segments[1].end,
+      p(101.6, 50.8),
+    );
+    expect(original.coordinateSpace.lengthUnit, LengthUnit.inch);
+    expect(original.paths.single.start, p(-1, 0));
+    expect(DrawingGeometry.fromJson(roundTripJson(mm.toJson())), mm);
+    expect(mm.convertedTo(LengthUnit.millimeter), mm);
+    expect(
+      p(
+        1.23456789012345,
+        0,
+      ).converted(from: LengthUnit.millimeter, to: LengthUnit.millimeter).x,
+      1.23456789012345,
+    );
+  });
+  test('입력 목록·공개 목록·반환 JSON의 모든 단계에서 모델을 바꿀 수 없다', () {
+    final segments = <PathSegment>[LineTo(end: p(1, 0)), LineTo(end: p(0, 0))];
+    final path = GeometryPath(start: p(0, 0), segments: segments);
+    final paths = [path];
+    final boundaries = <ClosedBoundary>[PathBoundary(path: path)];
+    final original = drawing(paths: paths, boundaries: boundaries);
+    segments.clear();
+    paths.clear();
+    boundaries.clear();
+    expect(original.paths.single.segments, hasLength(2));
+    expect(() => original.paths.clear(), throwsUnsupportedError);
+    expect(() => original.boundaries.clear(), throwsUnsupportedError);
+    expect(() => path.segments.clear(), throwsUnsupportedError);
+    final replacement = <PathSegment>[LineTo(end: p(2, 0))];
+    final changed = path.copyWith(segments: replacement);
+    replacement.clear();
+    expect(changed.segments, hasLength(1));
+    expect(path.segments, hasLength(2));
+    final json = original.toJson();
+    final restored = DrawingGeometry.fromJson(json);
+    final outputPaths = json['paths'] as List;
+    final first = outputPaths.first as Map;
+    (first['start'] as Map)['x'] = 999;
+    ((first['segments'] as List).first as Map)['kind'] = 'unknown';
+    outputPaths.clear();
+    (json['boundaries'] as List).clear();
+    (json['coordinateSpace'] as Map)['lengthUnit'] = 'unknown';
+    expect(restored, original);
+    expect(
+      DrawingGeometry.fromJson(roundTripJson(original.toJson())),
+      original,
+    );
+  });
+  test('생성된 중첩 수정과 JSON 복원도 수학적 값 검증을 우회하지 않는다', () {
+    final circle = CircleBoundary(center: p(1, 2), radius: 1);
+    expect(
+      () => circle.copyWith.center(x: double.nan),
+      rejects(GeometryErrorCode.nonFiniteNumber, 'x'),
+    );
+    expect(
+      () => circle.copyWith(radius: 0),
+      rejects(GeometryErrorCode.nonPositiveRadius, 'radius'),
+    );
+    final arc = ArcTo(end: p(1, 0), bulge: 1);
+    expect(
+      () => arc.copyWith(bulge: 0),
+      rejects(GeometryErrorCode.zeroArcBulge, 'bulge'),
+    );
+    expect(
+      () => PathSegment.fromJson({
+        'kind': 'arc',
+        'end': p(1, 0).toJson(),
+        'bulge': 0,
+      }),
+      rejects(GeometryErrorCode.zeroArcBulge, 'bulge'),
+    );
+    expect(
+      () => ClosedBoundary.fromJson({
+        'kind': 'circle',
+        'center': p(1, 2).toJson(),
+        'radius': -1,
+      }),
+      rejects(GeometryErrorCode.nonPositiveRadius, 'radius'),
+    );
+  });
+  for (final value in [double.nan, double.infinity, double.negativeInfinity]) {
+    test('비유한 좌표/반지름/bulge를 거부한다: $value', () {
+      expect(
+        () => Point2(x: value, y: 0),
+        rejects(GeometryErrorCode.nonFiniteNumber, 'x'),
+      );
+      expect(
+        () => p(0, 0).copyWith(y: value),
+        rejects(GeometryErrorCode.nonFiniteNumber, 'y'),
+      );
+      expect(
+        () => ArcTo(end: p(1, 0), bulge: value),
+        rejects(GeometryErrorCode.nonFiniteNumber, 'bulge'),
+      );
+      expect(
+        () => CircleBoundary(center: p(0, 0), radius: value),
+        rejects(GeometryErrorCode.nonFiniteNumber, 'radius'),
+      );
+    });
+  }
+  test('파생 실패는 입력 수학 오류·소비자 미지원과 구분하고 원인 수치를 남긴다', () {
+    final tinyPath = GeometryPath(
+      start: p(double.minPositive * 25, 0),
+      segments: [LineTo(end: p(double.minPositive * 26, 0))],
+    );
+    expect(
+      () =>
+          tinyPath.converted(from: LengthUnit.millimeter, to: LengthUnit.inch),
+      rejects(
+        GeometryErrorCode.numericRepresentationFailure,
+        'segments[0].end',
+      ),
+    );
+    final arc = ArcTo(end: p(2, 0), bulge: double.minPositive);
+    try {
+      GeometryPath(start: p(0, 0), segments: [arc]);
+      fail('표현 불가 원호가 생성됨');
+    } on GeometryValidationException catch (e) {
+      expect(e.code, GeometryErrorCode.numericRepresentationFailure);
+      expect(e.fieldPath, 'segments[0]');
+      expect(e.diagnostic.operation, 'deriveArcRadius');
+      expect(e.diagnostic.bulge, double.minPositive);
+      expect(e.diagnostic.endX, 2);
+    }
+    expect(
+      () => CircleBoundary(
+        center: p(double.maxFinite, 0),
+        radius: double.maxFinite,
+      ),
+      rejects(GeometryErrorCode.numericRepresentationFailure, 'radius'),
+    );
+    expect(
+      () => drawing(
+        boundaries: [CircleBoundary(center: p(1, 0), radius: double.maxFinite)],
+      ).convertedTo(LengthUnit.millimeter),
+      rejects(
+        GeometryErrorCode.numericRepresentationFailure,
+        'boundaries[0].radius',
+      ),
+    );
+    expect(
+      () => p(
+        double.minPositive,
+        0,
+      ).converted(from: LengthUnit.millimeter, to: LengthUnit.inch),
+      rejects(GeometryErrorCode.numericRepresentationFailure, 'x'),
+    );
+  });
+  test('중첩 복원은 파생 오류 진단과 부모 경로를 보존한다', () {
+    final json = {
+      'coordinateSpace': {'lengthUnit': 'millimeter'},
+      'paths': [],
+      'boundaries': [
+        {
+          'kind': 'path',
+          'path': {
+            'start': {'x': 0, 'y': 0},
+            'segments': [
+              {
+                'kind': 'arc',
+                'end': {'x': 2, 'y': 0},
+                'bulge': double.minPositive,
+              },
+              {
+                'kind': 'line',
+                'end': {'x': 0, 'y': 0},
+              },
+            ],
+          },
+        },
+      ],
+    };
+    try {
+      DrawingGeometry.fromJson(json);
+      fail('복원 성공');
+    } on GeometryValidationException catch (e) {
+      expect(e.fieldPath, 'boundaries[0].path.segments[0]');
+      expect(e.code, GeometryErrorCode.numericRepresentationFailure);
+      expect(e.diagnostic.startX, 0);
+      expect(e.diagnostic.endX, 2);
+      expect(e.diagnostic.bulge, double.minPositive);
+    }
+  });
+  final parsers = <(String, Map<String, Object?>, Object Function(Object?))>[
+    ('점', {'x': 1, 'y': 2}, Point2.fromJson),
+    ('문맥', {'lengthUnit': 'inch'}, DrawingCoordinateSpace.fromJson),
     (
-      '판',
-      {'widthMm': 36, 'heightMm': 36, 'holes': []},
-      RectangularPlateGeometry.fromJson,
+      '구간',
+      {
+        'kind': 'arc',
+        'end': {'x': 1, 'y': 2},
+        'bulge': 2,
+      },
+      PathSegment.fromJson,
     ),
+    ('경로', rectangle().toJson(), GeometryPath.fromJson),
     (
-      '홀',
-      {'holeId': 'h', 'centerXMm': 10, 'centerYMm': 10, 'diameterMm': 4},
-      CircularHole.fromJson,
+      '원',
+      CircleBoundary(center: p(0, 0), radius: 1).toJson(),
+      ClosedBoundary.fromJson,
     ),
-    (
-      '영역 경계',
-      {'xMm': 1, 'yMm': 2, 'widthMm': 3, 'heightMm': 4},
-      TextAreaBounds.fromJson,
-    ),
-    (
-      '영역 정의',
-      {'areaId': 'a', 'label': '', 'bounds': bounds().toJson()},
-      TextAreaDefinition.fromJson,
-    ),
+    ('묶음', drawing().toJson(), DrawingGeometry.fromJson),
   ];
-  for (final (name, json, parse) in cases) {
-    test('$name 필수 누락·잘못된 타입·추가 필드·최상위 타입을 구분한다', () {
+  for (final (name, json, parse) in parsers) {
+    test('$name 누락/null/최상위 타입/추가 필드가 조용히 보정되지 않는다', () {
       for (final key in json.keys) {
         final missing = Map<String, Object?>.of(json)..remove(key);
         expect(
           () => parse(missing),
-          invalid(GeometryErrorCode.missingField, key),
+          rejects(GeometryErrorCode.missingField, key),
         );
-        for (final value in [null, true, 'wrong', 1, <String, Object?>{}]) {
-          if (json[key] is num && value is num ||
-              json[key] is String && value is String ||
-              json[key] is Map && value is Map) {
-            continue;
-          }
-          expect(
-            () => parse({...json, key: value}),
-            invalid(GeometryErrorCode.invalidType, key),
-          );
-        }
+        expect(
+          () => parse({...json, key: null}),
+          rejects(GeometryErrorCode.invalidType, key),
+        );
       }
+      expect(() => parse([]), rejects(GeometryErrorCode.invalidType, r'$'));
       expect(
-        () => parse({...json, 'kind': 'unknown'}),
-        invalid(GeometryErrorCode.unexpectedField, 'kind'),
+        () => parse({...json, 'extra': true}),
+        rejects(GeometryErrorCode.unexpectedField, 'extra'),
       );
-      expect(() => parse([]), invalid(GeometryErrorCode.invalidType, r'$'));
     });
-    for (final key in json.keys.where((key) => json[key] is num)) {
-      test('$name $key 비유한 숫자는 JSON 경계에서 보정하지 않는다', () {
-        for (final value in [
-          double.nan,
-          double.infinity,
-          double.negativeInfinity,
-        ]) {
-          expect(
-            () => parse({...json, key: value}),
-            invalid(GeometryErrorCode.nonFiniteNumber, key),
-          );
-        }
-      });
-    }
   }
-
-  test('직접 생성·copyWith도 모든 수치의 유한성과 양수 치수를 검사한다', () {
-    for (final value in [
-      double.nan,
-      double.infinity,
-      double.negativeInfinity,
-    ]) {
-      for (final (run, path) in <(void Function(), String)>[
-        (
-          () =>
-              RectangularPlateGeometry(widthMm: value, heightMm: 1, holes: []),
-          'widthMm',
-        ),
-        (
-          () =>
-              RectangularPlateGeometry(widthMm: 1, heightMm: value, holes: []),
-          'heightMm',
-        ),
-        (() => hole(x: value), 'centerXMm'),
-        (() => hole(y: value), 'centerYMm'),
-        (() => hole(diameter: value), 'diameterMm'),
-        (() => bounds().copyWith(xMm: value), 'xMm'),
-        (() => bounds().copyWith(yMm: value), 'yMm'),
-        (() => bounds().copyWith(widthMm: value), 'widthMm'),
-        (() => bounds().copyWith(heightMm: value), 'heightMm'),
-      ]) {
-        expect(run, invalid(GeometryErrorCode.nonFiniteNumber, path));
-      }
-    }
-    for (final value in [0.0, -0.0, -1.0]) {
+  test('미지원 태그는 원래 태그와 경로를 유지하고 어떤 형상으로도 대체하지 않는다', () {
+    for (final tag in ['ellipse', 'rectangle', 'unknown']) {
       expect(
-        () => hole(diameter: value),
-        invalid(GeometryErrorCode.nonPositiveDimension, 'diameterMm'),
+        () => PathSegment.fromJson({'kind': tag}),
+        rejects(GeometryErrorCode.unsupportedTag, 'kind'),
       );
       expect(
-        () => bounds().copyWith(widthMm: value),
-        invalid(GeometryErrorCode.nonPositiveDimension, 'widthMm'),
+        () => ClosedBoundary.fromJson({'kind': tag}),
+        rejects(GeometryErrorCode.unsupportedTag, 'kind'),
       );
       expect(
-        () => bounds().copyWith(heightMm: value),
-        invalid(GeometryErrorCode.nonPositiveDimension, 'heightMm'),
-      );
-      expect(
-        () => RectangularPlateGeometry(widthMm: value, heightMm: 1, holes: []),
-        invalid(GeometryErrorCode.nonPositiveDimension, 'widthMm'),
-      );
-      expect(
-        () => RectangularPlateGeometry(widthMm: 1, heightMm: value, holes: []),
-        invalid(GeometryErrorCode.nonPositiveDimension, 'heightMm'),
+        () => PathSegment.fromJson({
+          'kind': tag,
+          'end': {'x': 1, 'y': 2},
+        }),
+        rejects(GeometryErrorCode.unsupportedTag, 'kind'),
       );
     }
-  });
-
-  test('유한한 입력의 파생 끝점 오버플로도 거부한다', () {
-    final max = double.maxFinite;
-    for (final (run, path) in <(void Function(), String)>[
-      (
-        () => TextAreaBounds(xMm: max, yMm: 0, widthMm: max, heightMm: 1),
-        'xMm',
-      ),
-      (() => bounds().copyWith(yMm: max, heightMm: max), 'yMm'),
-      (() => hole(x: max, diameter: max), 'centerXMm'),
-      (() => hole(x: -max, diameter: max), 'centerXMm'),
-      (() => hole(y: max, diameter: max), 'centerYMm'),
-      (() => hole(y: -max, diameter: max), 'centerYMm'),
-    ]) {
-      expect(run, invalid(GeometryErrorCode.nonFiniteBoundary, path));
+    try {
+      DrawingGeometry.fromJson({
+        'coordinateSpace': {'lengthUnit': 'pixel'},
+        'paths': [],
+        'boundaries': [],
+      });
+      fail('지원되지 않는 단위');
+    } on GeometryValidationException catch (e) {
+      expect(e.fieldPath, 'coordinateSpace.lengthUnit');
+      expect(e.diagnostic.tag, 'pixel');
     }
-  });
-
-  test('중첩 JSON은 하위 필드·목록 위치와 업무 오류를 전달한다', () {
-    expect(
-      () => RectangularPlateGeometry.fromJson({
-        'widthMm': 36,
-        'heightMm': 36,
-        'holes': [
-          hole().toJson(),
-          {'holeId': 'other', 'centerXMm': 1, 'centerYMm': 2, 'diameterMm': 0},
-        ],
-      }),
-      invalid(GeometryErrorCode.nonPositiveDimension, 'holes[1].diameterMm'),
-    );
-    expect(
-      () => RectangularPlateGeometry.fromJson({
-        'widthMm': 36,
-        'heightMm': 36,
-        'holes': [null],
-      }),
-      invalid(GeometryErrorCode.invalidType, 'holes[0]'),
-    );
-    expect(
-      () => TextAreaDefinition.fromJson({
-        'areaId': 'a',
-        'label': '',
-        'bounds': {'xMm': 1, 'yMm': 2, 'heightMm': 4},
-      }),
-      invalid(GeometryErrorCode.missingField, 'bounds.widthMm'),
-    );
-    expect(
-      () => TextAreaDefinition.fromJson({
-        'areaId': '',
-        'label': '',
-        'bounds': bounds().toJson(),
-      }),
-      invalid(GeometryErrorCode.emptyAreaId, 'areaId'),
-    );
-    expect(
-      () => CircularHole.fromJson({...hole().toJson(), 'holeId': ''}),
-      invalid(GeometryErrorCode.emptyHoleId, 'holeId'),
-    );
-  });
-
-  test('형상 관계는 검사하지 않아 외부 홀·동일 위치 홀·겹치는 영역을 정의할 수 있다', () {
-    final plate = RectangularPlateGeometry(
-      widthMm: 10,
-      heightMm: 10,
-      holes: [
-        hole(id: 'one', x: -100),
-        hole(id: 'two', x: -100),
-      ],
-    );
-    final first = TextAreaDefinition(areaId: 'a', label: '', bounds: bounds());
-    final second = TextAreaDefinition(
-      areaId: 'b',
-      label: '',
-      bounds: first.bounds,
-    );
-    expect(plate.holes, hasLength(2));
-    expect(first.bounds, second.bounds);
-    final overlapping = TextAreaDefinition(
-      areaId: 'c',
-      label: '',
-      bounds: TextAreaBounds(xMm: -110, yMm: 0, widthMm: 20, heightMm: 20),
-    );
-    expect(overlapping.bounds.xMm, -110);
   });
 }

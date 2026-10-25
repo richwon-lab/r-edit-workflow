@@ -2,157 +2,152 @@ import 'dart:convert';
 
 import 'package:r_edit_workflow/r_edit_workflow.dart';
 
-/// assert 비활성 실행에서도 형상 값의 생성·수정·복원을 검증한다.
+/// assert 비활성 AOT에서 공개 API의 생성·수정·복원·환산 검증을 확인한다.
 void main() {
   var assertions = false;
   assert(() {
     assertions = true;
     return true;
   }());
-  if (assertions) throw StateError('assert 비활성 실행이 필요합니다');
-  final hole = CircularHole(
-    holeId: 'h',
-    centerXMm: 10,
-    centerYMm: 10,
-    diameterMm: 4,
-  );
-  final incoming = [hole];
-  final plate = RectangularPlateGeometry(
-    widthMm: 36,
-    heightMm: 36,
-    holes: incoming,
-  );
-  incoming.clear();
-  final wider = plate.copyWith(widthMm: 40);
-  if (wider.holes.single != hole || wider.widthMm != 40) {
-    throw StateError('치수 변경으로 홀 변경');
+  if (assertions) {
+    throw StateError('assert 비활성 실행이 필요합니다');
   }
-  final json = plate.toJson();
-  final restored = RectangularPlateGeometry.fromJson(
-    jsonDecode(jsonEncode(json)),
+  final start = Point2(x: 0, y: 0);
+  final arc = ArcTo(end: Point2(x: 2, y: 0), bulge: -2);
+  final segments = <PathSegment>[arc, LineTo(end: start)];
+  final path = GeometryPath(start: start, segments: segments);
+  final circle = CircleBoundary(center: start, radius: 1);
+  final boundaries = <ClosedBoundary>[circle, PathBoundary(path: path)];
+  final geometry = DrawingGeometry(
+    coordinateSpace: DrawingCoordinateSpace(lengthUnit: LengthUnit.inch),
+    paths: [path],
+    boundaries: boundaries,
   );
-  ((json['holes'] as List).single as Map)['diameterMm'] = 999;
-  if (restored != plate || plate.holes.single != hole || plate.widthMm != 36) {
-    throw StateError('방어 복사/왕복 실패');
+  segments.clear();
+  boundaries.clear();
+  final json = geometry.toJson();
+  final restored = DrawingGeometry.fromJson(jsonDecode(jsonEncode(json)));
+  (json['boundaries'] as List).clear();
+  if (restored != geometry || path.segments.length != 2) {
+    throw StateError('왕복/방어 복사 실패');
   }
-  final bounds = TextAreaBounds(
-    xMm: -1.23456789012345,
-    yMm: 0,
-    widthMm: 40,
-    heightMm: 30,
-  );
-  final area = TextAreaDefinition(areaId: ' a ', label: '', bounds: bounds);
-  final moved = area.copyWith(bounds: bounds.copyWith(xMm: -100));
-  if (TextAreaDefinition.fromJson(jsonDecode(jsonEncode(area.toJson()))) !=
-          area ||
-      moved.areaId != ' a ' ||
-      area.bounds.xMm != -1.23456789012345) {
-    throw StateError('영역 보존 실패');
+  final mm = geometry.convertedTo(LengthUnit.millimeter);
+  if ((mm.paths.single.segments.first as ArcTo).bulge != -2 ||
+      (mm.boundaries.first as CircleBoundary).radius != 25.4 ||
+      geometry.coordinateSpace.lengthUnit != LengthUnit.inch) {
+    throw StateError('단위/원래 값 보존 실패');
   }
   final failures = <(void Function(), GeometryErrorCode, String)>[
-    (() => hole.copyWith(holeId: ''), GeometryErrorCode.emptyHoleId, 'holeId'),
-    (() => area.copyWith(areaId: ''), GeometryErrorCode.emptyAreaId, 'areaId'),
+    (() => Point2(x: double.nan, y: 0), GeometryErrorCode.nonFiniteNumber, 'x'),
     (
-      () => plate.copyWith(widthMm: 0),
-      GeometryErrorCode.nonPositiveDimension,
-      'widthMm',
-    ),
-    (
-      () => area.copyWith.bounds(heightMm: -1),
-      GeometryErrorCode.nonPositiveDimension,
-      'heightMm',
-    ),
-    (
-      () => hole.copyWith(diameterMm: 0),
-      GeometryErrorCode.nonPositiveDimension,
-      'diameterMm',
-    ),
-    (
-      () => hole.copyWith(centerXMm: double.nan),
+      () => start.copyWith(y: double.infinity),
       GeometryErrorCode.nonFiniteNumber,
-      'centerXMm',
+      'y',
     ),
     (
-      () => bounds.copyWith(yMm: double.infinity),
+      () => circle.copyWith(radius: 0),
+      GeometryErrorCode.nonPositiveRadius,
+      'radius',
+    ),
+    (
+      () => circle.copyWith.center(x: double.nan),
       GeometryErrorCode.nonFiniteNumber,
-      'yMm',
+      'x',
+    ),
+    (() => arc.copyWith(bulge: 0), GeometryErrorCode.zeroArcBulge, 'bulge'),
+    (
+      () => GeometryPath(start: start, segments: []),
+      GeometryErrorCode.emptyPath,
+      'segments',
     ),
     (
-      () => plate.copyWith(heightMm: double.negativeInfinity),
-      GeometryErrorCode.nonFiniteNumber,
-      'heightMm',
+      () => path.copyWith(start: arc.end),
+      GeometryErrorCode.degenerateSegment,
+      'segments[0].end',
     ),
     (
-      () => bounds.copyWith(xMm: double.maxFinite, widthMm: double.maxFinite),
-      GeometryErrorCode.nonFiniteBoundary,
-      'xMm',
-    ),
-    (
-      () => hole.copyWith(
-        centerYMm: -double.maxFinite,
-        diameterMm: double.maxFinite,
+      () => path.copyWith(
+        segments: [ArcTo(end: arc.end, bulge: double.minPositive)],
       ),
-      GeometryErrorCode.nonFiniteBoundary,
-      'centerYMm',
+      GeometryErrorCode.numericRepresentationFailure,
+      'segments[0]',
     ),
     (
-      () => plate.copyWith(holes: [hole, hole.copyWith(centerXMm: 20)]),
-      GeometryErrorCode.duplicateHoleId,
-      'holes[1].holeId',
+      () => PathBoundary(
+        path: GeometryPath(start: start, segments: [arc]),
+      ),
+      GeometryErrorCode.openBoundary,
+      'path.segments[0].end',
     ),
     (
-      () => RectangularPlateGeometry.fromJson({
-        'widthMm': 1,
-        'heightMm': 1,
-        'holes': [hole.toJson(), hole.toJson()],
+      () => ClosedBoundary.fromJson({
+        'kind': 'path',
+        'path': {
+          'start': start.toJson(),
+          'segments': [LineTo(end: start).toJson()],
+        },
       }),
-      GeometryErrorCode.duplicateHoleId,
-      'holes[1].holeId',
+      GeometryErrorCode.degenerateSegment,
+      'path.segments[0].end',
     ),
     (
-      () => CircularHole.fromJson({...hole.toJson(), 'diameterMm': 0}),
-      GeometryErrorCode.nonPositiveDimension,
-      'diameterMm',
-    ),
-    (
-      () => TextAreaDefinition.fromJson({
-        ...area.toJson(),
-        'bounds': {...bounds.toJson(), 'widthMm': 0},
+      () => ClosedBoundary.fromJson({
+        'kind': 'circle',
+        'center': start.toJson(),
+        'radius': 0,
       }),
-      GeometryErrorCode.nonPositiveDimension,
-      'bounds.widthMm',
+      GeometryErrorCode.nonPositiveRadius,
+      'radius',
     ),
     (
-      () => RectangularPlateGeometry.fromJson({
-        'widthMm': 1,
-        'heightMm': 1,
-        'holes': [null],
+      () => PathSegment.fromJson({
+        'kind': 'arc',
+        'end': arc.end.toJson(),
+        'bulge': 0,
       }),
-      GeometryErrorCode.invalidType,
-      'holes[0]',
+      GeometryErrorCode.zeroArcBulge,
+      'bulge',
     ),
     (
-      () => TextAreaDefinition.fromJson({
-        'areaId': 'a',
-        'bounds': bounds.toJson(),
-      }),
-      GeometryErrorCode.missingField,
-      'label',
+      () => DrawingCoordinateSpace.fromJson({'lengthUnit': 'pixel'}),
+      GeometryErrorCode.unsupportedTag,
+      'lengthUnit',
     ),
     (
-      () => CircularHole.fromJson({...hole.toJson(), 'kind': 'circle'}),
-      GeometryErrorCode.unexpectedField,
+      () => ClosedBoundary.fromJson({'kind': 'rectangle'}),
+      GeometryErrorCode.unsupportedTag,
       'kind',
     ),
+    (
+      () => Point2(
+        x: double.maxFinite,
+        y: 0,
+      ).converted(from: LengthUnit.inch, to: LengthUnit.millimeter),
+      GeometryErrorCode.numericRepresentationFailure,
+      'x',
+    ),
+    (
+      () => Point2(
+        x: double.minPositive,
+        y: 0,
+      ).converted(from: LengthUnit.millimeter, to: LengthUnit.inch),
+      GeometryErrorCode.numericRepresentationFailure,
+      'x',
+    ),
   ];
-  for (final (run, code, path) in failures) {
+  for (final (run, code, fieldPath) in failures) {
     var rejected = false;
     try {
       run();
     } on GeometryValidationException catch (e) {
-      rejected = e.code == code && e.fieldPath == path;
+      rejected =
+          e.code == code &&
+          e.fieldPath == fieldPath &&
+          e.diagnostic.operation.isNotEmpty;
     }
-    if (!rejected) throw StateError('검증 실패: $code $path');
+    if (!rejected) {
+      throw StateError('검증 실패: $code $fieldPath');
+    }
   }
-  print('형상 AOT: assert 비활성, 정상 왕복·교체·방어 복사와 오류 ${failures.length}건 통과');
+  print('기하 AOT: assert 비활성, 왕복·불변성·단위 환산과 오류 ${failures.length}건 통과');
 }
