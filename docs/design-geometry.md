@@ -29,12 +29,17 @@ ID는 빈 문자열만 거부하고 전달 문자열을 그대로 보존한다. 
 | validateTextAreaInputs | bindTextAreaInputs / validateProduct | 새 제품/연결 모델을 만드는 기능이 아니라 영역 입력 대조만 수행함 |
 
 ```text
-lib/src/design/design_geometry.dart        네 업무 역할 값·JSON·전체 환산
-lib/src/design/design_geometry.freezed.dart 생성된 값 비교/하위 copyWith
-lib/src/design/design_geometry.g.dart       생성된 필드 JSON 변환
-lib/src/design/design_errors.dart          업무 정의/참조 오류·설명·명시적 상세
+lib/src/design/design_geometry.dart       DesignGeometry·소유 ID 중복 검사·전체 환산
+lib/src/design/cutout_definition.dart     CutoutDefinition·관통 경계
+lib/src/design/text_area_definition.dart  TextAreaDefinition·영역 ID/표시 이름
+lib/src/design/text_region.dart           TextRegion·외부/제외 경계
+lib/src/design/design_json.dart           공유 JSON 구조 검사·경계 직렬화 (내부)
+lib/src/design/design_errors.dart         업무 정의/참조 오류·설명·명시적 상세
 lib/src/design/text_area_input_validation.dart  입력 ID 대조
+각 모델의 .freezed.dart / .g.dart          모델별 생성 소스
 ```
+
+네 모델은 각각 독립 Dart library이며 모델 전용 JSON 변환은 해당 파일에 둔다. 실제 공유하는 JSON 구조 검사만 design_json.dart에서 가져오고 공개 진입점에는 export하지 않는다. 모델끼리 private 접근을 위해 part로 묶지 않는다.
 
 기하 요소 폴더의 CircleBoundary/PathBoundary/GeometryPath와 역할 파일을 분리했다. DrawingGeometry는 독립적인 무역할 기하 묶음으로 남지만 DesignGeometry에 포함하지 않는다. 같은 내용의 두 목록을 동기화하거나 이중 정본으로 저장하지 않는다. 전체 AppliedDesign·재사용 출처·도안 공유 명령을 이 모델에 붙이지 않는다.
 

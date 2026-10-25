@@ -125,7 +125,7 @@ final class DesignValidationIssue {
       '${code.name}, fieldPath=$fieldPath, 설명=${code.description}${details == null ? '' : ', $details'}';
 }
 
-/// 유효한 도안 값 구성을 거부한다. 연결 API는 별도로 issue 목록을 반환한다.
+/// 도안 값 구성의 검증 실패를 전달한다. 연결 API는 별도로 issue 목록을 반환한다.
 final class DesignValidationException implements Exception {
   const DesignValidationException(this.issue);
 

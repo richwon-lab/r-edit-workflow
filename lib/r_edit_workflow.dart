@@ -34,8 +34,10 @@ export 'src/geometry/closed_boundary.dart'
     show ClosedBoundary, CircleBoundary, PathBoundary;
 export 'src/geometry/drawing_geometry.dart' show DrawingGeometry;
 
-export 'src/design/design_geometry.dart'
-    show DesignGeometry, CutoutDefinition, TextAreaDefinition, TextRegion;
+export 'src/design/design_geometry.dart' show DesignGeometry;
+export 'src/design/cutout_definition.dart' show CutoutDefinition;
+export 'src/design/text_area_definition.dart' show TextAreaDefinition;
+export 'src/design/text_region.dart' show TextRegion;
 export 'src/design/design_errors.dart'
     show
         DesignErrorCode,
