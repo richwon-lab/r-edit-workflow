@@ -57,14 +57,14 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 
 `fromJson(Object?)`는 JSON 디코딩 결과를 받는다. 필수 누락은 missingField, 명시적 null/잘못된 타입은 invalidType, 알 수 없는 문자열 방식은 unknownLineBreakMode다. 알 수 없는 필드와 자동 방식의 lines도 unexpectedField로 거부해 데이터를 조용히 버리지 않는다. 해석 가능한 첫 오류를 예외로 전달하며 모든 오류를 집계하지 않는다. JSON 문자열 문법 자체는 dart:convert의 jsonDecode가 검사한다.
 
-| 코드 | 의미 / 경로 예 |
-|---|---|
-| missingField / invalidType | 필수 누락 / 타입 오류, areaId·sourceText·lineBreak.mode·lineBreak.lines[1] 등 |
-| unknownLineBreakMode / unexpectedField | 알 수 없는 방식 / 허용하지 않은 필드 |
-| emptyAreaId / emptySourceText | 빈 식별자 / 이번 미지원 빈 원문 |
-| emptySpecifiedLines / emptySpecifiedLine | 빈 지정 목록 / 이번 미지원 빈 줄 |
-| sourceContainsCrLf / specifiedLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF |
-| specifiedLinesMismatchSourceText | 지정 줄의 연결 내용과 원문 불일치 |
+| 코드                                           | 의미 / 경로 예                                                                |
+|------------------------------------------------|-------------------------------------------------------------------------------|
+| missingField / invalidType                     | 필수 누락 / 타입 오류, areaId·sourceText·lineBreak.mode·lineBreak.lines[1] 등 |
+| unknownLineBreakMode / unexpectedField         | 알 수 없는 방식 / 허용하지 않은 필드                                          |
+| emptyAreaId / emptySourceText                  | 빈 식별자 / 이번 미지원 빈 원문                                               |
+| emptySpecifiedLines / emptySpecifiedLine       | 빈 지정 목록 / 이번 미지원 빈 줄                                              |
+| sourceContainsCrLf / specifiedLineContainsCrLf | 원문 / 지정 줄 내 CR 또는 LF                                                  |
+| specifiedLinesMismatchSourceText               | 지정 줄의 연결 내용과 원문 불일치                                             |
 
 값 비교·복사에는 Freezed 4.0.3, JSON 필드 변환에는 json_serializable 6.15.2을 사용한다. 업무 검증과 오류 경계는 직접 작성한다. runtime annotation 3.1.0/4.12.0, build_runner 2.16.2를 채택했고 test 제약은 유지하고 분석은 very_good_analysis 11.0.0과 strict 타입 검사로 통일했다. 이 작은 JSON은 전체 문서 형식이 아니다.
 
