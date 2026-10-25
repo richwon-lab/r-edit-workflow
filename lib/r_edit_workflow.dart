@@ -48,3 +48,23 @@ export 'src/design/design_errors.dart'
         DesignValidationIssue,
         DesignValidationException;
 export 'src/design/text_area_input_validation.dart' show validateTextAreaInputs;
+
+export 'src/design/applied_design_geometry.dart' show AppliedDesignGeometry;
+export 'src/design/design_source_reference.dart' show DesignSourceReference;
+export 'src/product/product_input.dart' show ProductInput;
+export 'src/product/product_design_configuration.dart'
+    show ProductDesignConfiguration;
+export 'src/product/product_design_validation.dart'
+    show validateProductDesignConfiguration;
+export 'src/product/product_design_errors.dart'
+    show
+        ProductDesignErrorCode,
+        ProductDesignIssue,
+        ProductDesignIssueDetails,
+        ProductDesignIdentifierDetails,
+        ProductDesignDuplicateDetails,
+        ProductDesignReferenceDetails,
+        ProductDesignAreaDetails,
+        ProductDesignTypeDetails,
+        ProductDesignValidationException,
+        ProductDesignNestedException;

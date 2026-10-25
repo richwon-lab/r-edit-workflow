@@ -11,8 +11,10 @@ targets:
           - lib/src/text_area_input.dart
           - lib/src/geometry/*.dart
           - lib/src/design/*.dart
+          - lib/src/product/*.dart
       json_serializable:
         generate_for:
           - lib/src/text_area_input.dart
           - lib/src/geometry/*.dart
           - lib/src/design/*.dart
+          - lib/src/product/*.dart

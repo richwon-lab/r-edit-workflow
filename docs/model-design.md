@@ -1,5 +1,7 @@
 # 첫 업무 모델 설계안
 
+제품·적용 형상 참조의 현재 구현은 [제품 구성 계약](product-design-configuration.md)이다. 이전 설계의 추천 이름을 값 모델에 채택했고, 변경 명령·과거 ID 내용 대조·전체 제작 조건은 구현하지 않았다.
+
 2026-10-26 제품 참조·변경의 현재 추천안은 [제품·도안 연결 계약](product-design-binding.md)이다. 형상 스냅샷과 완전한 제작 적용 내용을 구분하며, 아래 과거 WorkProduct/AppliedDesign 필드 후보를 새 구현의 필수값으로 간주하지 않는다.
 
 최신 도안 구성 값과 영역 입력 대조는 [도안 구성 계약](design-geometry.md)을 따른다. DesignGeometry/CutoutDefinition/TextAreaDefinition/TextRegion과 validateTextAreaInputs를 구현했다. 아래 이전 절의 영역 미구현 기록과 구분하며 AppliedDesign/제품 전체·배치·제작 판정은 여전히 미구현이다.

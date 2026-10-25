@@ -1,6 +1,8 @@
 # 제품 입력과 적용 도안의 참조·변경 계약
 
-2026-10-26. **설계 제안이며 새 API와 변경 동작은 미구현이다.** 현재 구현은 [도안 구성](design-geometry.md), TextAreaInput과 validateTextAreaInputs까지다. 아래 JSON은 관계 검토용이며 전체 작업 파일 스키마가 아니다.
+현재 값·참조 부분의 구현은 [제품 구성 구현 계약](product-design-configuration.md)을 따른다. 아래 변경·출처/ID 정책의 과거 제안과 현재 보장 범위를 구분하며 안전한 변경 반영은 여전히 미구현이다.
+
+2026-10-26 최초 설계 당시 기록. 값·참조 부분은 위 후속 구현 계약으로 구체화했고 변경 동작은 미구현이다. 당시 구현은 [도안 구성](design-geometry.md), TextAreaInput과 validateTextAreaInputs까지다. 아래 JSON은 관계 검토용이며 전체 작업 파일 스키마가 아니다.
 
 ## 1. 기준과 결정 상태
 
