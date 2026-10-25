@@ -31,7 +31,10 @@ sealed class ClosedBoundary {
         throw GeometryValidationException(
           GeometryErrorCode.unsupportedTag,
           'kind',
-          GeometryDiagnostic(operation: 'readClosedBoundary', tag: kind),
+          GeometryDiagnostic(
+            operation: 'readClosedBoundary',
+            details: GeometryTagDetails(kind),
+          ),
         );
     }
   }
@@ -53,24 +56,32 @@ final class CircleBoundary extends ClosedBoundary with _$CircleBoundary {
       throw GeometryValidationException(
         GeometryErrorCode.nonPositiveRadius,
         'radius',
-        GeometryDiagnostic(operation: 'checkCircleRadius', value: radius),
+        GeometryDiagnostic(
+          operation: 'checkCircleRadius',
+          details: GeometryNumberDetails(radius),
+        ),
       );
     }
-    for (final value in [
-      center.x - radius,
-      center.x + radius,
-      center.y - radius,
-      center.y + radius,
-    ]) {
+    for (final direction in GeometryExtremumDirection.values) {
+      final value = switch (direction) {
+        GeometryExtremumDirection.positiveX => center.x + radius,
+        GeometryExtremumDirection.negativeX => center.x - radius,
+        GeometryExtremumDirection.positiveY => center.y + radius,
+        GeometryExtremumDirection.negativeY => center.y - radius,
+      };
       if (!value.isFinite) {
         throw GeometryValidationException(
           GeometryErrorCode.numericRepresentationFailure,
           'radius',
           GeometryDiagnostic(
             operation: 'deriveCircleExtent',
-            value: value,
-            startX: center.x,
-            startY: center.y,
+            details: GeometryCircleExtremumDetails(
+              centerX: center.x,
+              centerY: center.y,
+              radius: radius,
+              direction: direction,
+              value: value,
+            ),
           ),
         );
       }
@@ -117,10 +128,12 @@ final class PathBoundary extends ClosedBoundary with _$PathBoundary {
         'path.segments[${path.segments.length - 1}].end',
         GeometryDiagnostic(
           operation: 'checkBoundaryClosure',
-          startX: path.start.x,
-          startY: path.start.y,
-          endX: end.x,
-          endY: end.y,
+          details: GeometrySegmentDetails(
+            startX: path.start.x,
+            startY: path.start.y,
+            endX: end.x,
+            endY: end.y,
+          ),
         ),
       );
     }

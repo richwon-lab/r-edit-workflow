@@ -30,7 +30,10 @@ sealed class PathSegment {
         throw GeometryValidationException(
           GeometryErrorCode.unsupportedTag,
           'kind',
-          GeometryDiagnostic(operation: 'readPathSegment', tag: tag),
+          GeometryDiagnostic(
+            operation: 'readPathSegment',
+            details: GeometryTagDetails(tag),
+          ),
         );
     }
   }
@@ -71,7 +74,10 @@ final class ArcTo extends PathSegment with _$ArcTo {
       throw GeometryValidationException(
         GeometryErrorCode.zeroArcBulge,
         'bulge',
-        GeometryDiagnostic(operation: 'checkArcBulge', value: bulge),
+        GeometryDiagnostic(
+          operation: 'checkArcBulge',
+          details: GeometryNumberDetails(bulge),
+        ),
       );
     }
   }

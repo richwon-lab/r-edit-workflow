@@ -24,7 +24,7 @@ final class GeometryPath with _$GeometryPath {
   GeometryPath({required this.start, required List<PathSegment> segments})
     : segments = List.unmodifiable(segments) {
     if (this.segments.isEmpty) {
-      throw const GeometryValidationException(
+      throw GeometryValidationException(
         GeometryErrorCode.emptyPath,
         'segments',
         GeometryDiagnostic(operation: 'checkPathSegments'),
@@ -35,11 +35,13 @@ final class GeometryPath with _$GeometryPath {
       final segment = this.segments[i];
       final diagnostic = GeometryDiagnostic(
         operation: 'checkSegment',
-        startX: segmentStart.x,
-        startY: segmentStart.y,
-        endX: segment.end.x,
-        endY: segment.end.y,
-        bulge: segment is ArcTo ? segment.bulge : null,
+        details: GeometrySegmentDetails(
+          startX: segmentStart.x,
+          startY: segmentStart.y,
+          endX: segment.end.x,
+          endY: segment.end.y,
+          bulge: segment is ArcTo ? segment.bulge : null,
+        ),
       );
       if (segmentStart == segment.end) {
         throw GeometryValidationException(
@@ -97,11 +99,7 @@ final class GeometryPath with _$GeometryPath {
         error.fieldPath,
         GeometryDiagnostic(
           operation: 'convertSegmentCollapse',
-          startX: cause.startX,
-          startY: cause.startY,
-          endX: cause.endX,
-          endY: cause.endY,
-          bulge: cause.bulge,
+          details: cause.details,
         ),
       );
     }
@@ -119,10 +117,16 @@ Point2 _convertPathStart(Point2 start, LengthUnit from, LengthUnit to) {
 Point2 _readPathStart(Object? json) => readGeometryPoint(json, 'start');
 List<PathSegment> _readPathSegments(Object? json) {
   if (json is! List) {
-    throw const GeometryValidationException(
+    throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       'segments',
-      GeometryDiagnostic(operation: 'readPathSegments', expectedType: 'List'),
+      GeometryDiagnostic(
+        operation: 'readPathSegments',
+        details: GeometryTypeDetails(
+          expectedType: 'List',
+          actualType: json.runtimeType.toString(),
+        ),
+      ),
     );
   }
   final result = <PathSegment>[];
@@ -140,25 +144,29 @@ List<Map<String, Object?>> _writePathSegments(List<PathSegment> segments) => [
   for (final segment in segments) segment.toJson(),
 ];
 
-// 시작점이 있는 경로만 호출한다. bulge의 범위를 소비자 지원 범위로 제한하지 않는다.
+// 시작점이 있는 경로만 검사한다. 소비자의 지원 범위나 제작 공차를 적용하지 않는다.
 void _checkArcRepresentation(Point2 start, ArcTo segment, int index) {
   final end = segment.end;
   final bulge = segment.bulge;
+  final segmentDetails = GeometrySegmentDetails(
+    startX: start.x,
+    startY: start.y,
+    endX: end.x,
+    endY: end.y,
+    bulge: bulge,
+  );
   Never reject(String operation, double value) =>
       throw GeometryValidationException(
         GeometryErrorCode.numericRepresentationFailure,
         'segments[$index]',
         GeometryDiagnostic(
           operation: operation,
-          value: value,
-          startX: start.x,
-          startY: start.y,
-          endX: end.x,
-          endY: end.y,
-          bulge: bulge,
+          details: GeometryArcCalculationDetails(
+            segment: segmentDetails,
+            value: value,
+          ),
         ),
       );
-  // 큰 좌표 차이/제곱과 bulge 제곱의 불필요한 오버플로를 피한다.
   final halfDx = end.x / 2 - start.x / 2;
   final halfDy = end.y / 2 - start.y / 2;
   final scale = math.max(halfDx.abs(), halfDy.abs());
@@ -170,12 +178,78 @@ void _checkArcRepresentation(Point2 start, ArcTo segment, int index) {
     reject('deriveHalfChord', halfChord);
   }
   final magnitude = bulge.abs();
-  final radius = halfChord * (magnitude / 2 + 0.5 / magnitude);
+  double radius;
+  double unsignedOffset;
+  if (magnitude >= 0.5 && magnitude <= 2) {
+    // 1 부근에서는 양쪽 반항의 개별 언더플로와 불필요한 상쇄를 피한다.
+    radius = halfChord * (magnitude / 2 + 0.5 / magnitude);
+    unsignedOffset = halfChord * ((1 / magnitude - magnitude) / 2);
+  } else {
+    // 역수를 먼저 만들지 않고 현 길이와 곱/몫을 결합한다.
+    final largeTerm = _halfProduct(halfChord, magnitude);
+    final smallTerm = _halfQuotient(halfChord, magnitude);
+    radius = largeTerm + smallTerm;
+    unsignedOffset = smallTerm - largeTerm;
+  }
   if (!radius.isFinite || radius <= 0) reject('deriveArcRadius', radius);
-  final offset = halfChord * (0.5 / bulge - bulge / 2);
+  final offset = bulge > 0 ? unsignedOffset : -unsignedOffset;
   if (!offset.isFinite) reject('deriveArcCenterOffset', offset);
-  final centerX = start.x / 2 + end.x / 2 - (halfDy / halfChord) * offset;
-  final centerY = start.y / 2 + end.y / 2 + (halfDx / halfChord) * offset;
+  final normalX = -halfDy / halfChord;
+  final normalY = halfDx / halfChord;
+  final centerX = start.x / 2 + end.x / 2 + normalX * offset;
+  final centerY = start.y / 2 + end.y / 2 + normalY * offset;
   if (!centerX.isFinite) reject('deriveArcCenterX', centerX);
   if (!centerY.isFinite) reject('deriveArcCenterY', centerY);
+
+  // 원호는 양수 bulge면 유향 현의 오른쪽, 음수면 왼쪽 원주다.
+  // 원 중심의 현으로부터 거리/radius와 단위 법선으로 극점 포함을 판정한다.
+  // 각도 차/2π 래핑과 거대한 실제 극점 좌표를 먼저 만들 필요가 없다.
+  final relativeOffset = offset / radius;
+  for (final direction in GeometryExtremumDirection.values) {
+    final normalProjection = switch (direction) {
+      GeometryExtremumDirection.positiveX => normalX,
+      GeometryExtremumDirection.negativeX => -normalX,
+      GeometryExtremumDirection.positiveY => normalY,
+      GeometryExtremumDirection.negativeY => -normalY,
+    };
+    final side = relativeOffset + normalProjection;
+    final onArc = bulge > 0 ? side <= 0 : side >= 0;
+    if (!onArc) continue;
+    final value = switch (direction) {
+      GeometryExtremumDirection.positiveX => centerX + radius,
+      GeometryExtremumDirection.negativeX => centerX - radius,
+      GeometryExtremumDirection.positiveY => centerY + radius,
+      GeometryExtremumDirection.negativeY => centerY - radius,
+    };
+    if (!value.isFinite) {
+      throw GeometryValidationException(
+        GeometryErrorCode.numericRepresentationFailure,
+        'segments[$index]',
+        GeometryDiagnostic(
+          operation: 'deriveArcExtremum',
+          details: GeometryArcExtremumDetails(
+            segment: segmentDetails,
+            extremum: GeometryCircleExtremumDetails(
+              centerX: centerX,
+              centerY: centerY,
+              radius: radius,
+              direction: direction,
+              value: value,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+// a*b/2: 먼저 큰 인자를 반으로 해 중간 곱 오버플로를 피한다.
+double _halfProduct(double a, double b) => a >= b ? (a / 2) * b : a * (b / 2);
+
+// a/(2*b): a가 최소 비정규 수인 경우에도 a/2의 선행 소실을 피한다.
+double _halfQuotient(double a, double b) {
+  final half = a / 2;
+  if (half != 0) return half / b;
+  if (b <= double.maxFinite / 2) return a / (b * 2);
+  return (a / b) / 2;
 }

@@ -11,7 +11,20 @@ export 'src/text_area_input.dart'
         TextInputValidationException;
 
 export 'src/geometry/geometry_errors.dart'
-    show GeometryErrorCode, GeometryDiagnostic, GeometryValidationException;
+    show
+        GeometryErrorCode,
+        GeometryErrorExplanation,
+        GeometryDiagnostic,
+        GeometryValidationException,
+        GeometryDiagnosticDetails,
+        GeometryTypeDetails,
+        GeometryNumberDetails,
+        GeometryTagDetails,
+        GeometrySegmentDetails,
+        GeometryArcCalculationDetails,
+        GeometryCircleExtremumDetails,
+        GeometryArcExtremumDetails,
+        GeometryExtremumDirection;
 export 'src/geometry/coordinate_space.dart'
     show LengthUnit, DrawingCoordinateSpace;
 export 'src/geometry/point2.dart' show Point2;

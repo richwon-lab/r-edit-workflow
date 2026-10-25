@@ -86,10 +86,16 @@ Map<String, Object?> _writeCoordinateSpace(DrawingCoordinateSpace space) =>
     space.toJson();
 List<GeometryPath> _readDrawingPaths(Object? json) {
   if (json is! List) {
-    throw const GeometryValidationException(
+    throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       'paths',
-      GeometryDiagnostic(operation: 'readDrawingPaths', expectedType: 'List'),
+      GeometryDiagnostic(
+        operation: 'readDrawingPaths',
+        details: GeometryTypeDetails(
+          expectedType: 'List',
+          actualType: json.runtimeType.toString(),
+        ),
+      ),
     );
   }
   final result = <GeometryPath>[];
@@ -105,12 +111,15 @@ List<GeometryPath> _readDrawingPaths(Object? json) {
 
 List<ClosedBoundary> _readDrawingBoundaries(Object? json) {
   if (json is! List) {
-    throw const GeometryValidationException(
+    throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       'boundaries',
       GeometryDiagnostic(
         operation: 'readDrawingBoundaries',
-        expectedType: 'List',
+        details: GeometryTypeDetails(
+          expectedType: 'List',
+          actualType: json.runtimeType.toString(),
+        ),
       ),
     );
   }

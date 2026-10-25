@@ -31,11 +31,13 @@
 
 Point2는 Point2D와 달리 Dart/Flutter의 Point/Offset 혼동을 줄이면서 차원을 드러내기 위해 선택했다. LineTo/ArcTo는 시작점 없는 구간이라는 책임을 이름에 드러내며 LineSegment(start,end)보다 새 경로 구조에 맞다. GeometryPath는 단순 Path보다 Flutter/파일 경로와 덜 혼동된다. CircleBoundary/PathBoundary는 CircleHole/PlateGeometry와 달리 업무 역할을 강제하지 않는다. DrawingGeometry는 전체 AppliedDesign이 아니라 단위가 결합된 기하 묶음임을 드러내기 위해 선택했다. GeometryDocument는 파일 저장 구현처럼 읽힐 수 있어 채택하지 않았다.
 
+최신 수치·진단 보완은 12절을 따른다. 9~11절의 105개 테스트/AOT는 초기 최소 기하 구현 당시 기록이다.
+
 ### 원호 표현과 수치 검증
 
 bulge=tan(부호 있는 중심각/4)이며 0은 수학적으로 잘못된 원호 값이다. 0을 선분으로 바꾸지 않는다. abs(bulge)>1은 반원을 넘는 원호이며 양쪽 방향 모두 허용한다. 유한한 bulge는 한 바퀴 미만 원호를 표현하고, 시작=끝의 단일 원호를 전체 원으로 해석하지 않는다. 원이 필요하면 CircleBoundary를 사용한다. 원호 구간으로 원을 구성한 경로도 가능하지만 원과 분해 경로를 같은 경계의 이중 정본으로 저장하지 않는다.
 
-ArcTo는 bulge의 유한성/0 여부만 검사한다. 시작점과 끝이 같은지, 현 길이에서 중심·반지름을 double로 표현할 수 있는지는 GeometryPath만 검사한다. 원호 중심/반지름은 파생 검사용이며 JSON에 중복 저장하지 않는다. 큰 좌표/큰 bulge의 불필요한 제곱 오버플로를 피하는 연산을 사용한다. 그럼에도 극단적 double 입력의 반현/반지름/중심 계산이 비유한 또는 0으로 소실되면 numericRepresentationFailure다. 모든 수학적으로 유효한 실수 기하를 double로 처리할 수 있다고 보장하지 않는다. 수치 실패를 엔진 미지원이나 잘못된 bulge=0과 섞지 않는다.
+ArcTo는 bulge의 유한성/0 여부만 검사한다. 시작점과 끝이 같은지, 현 길이에서 중심·반지름과 실제 원호 위 극점을 double로 표현할 수 있는지는 GeometryPath만 검사한다. 원호 중심/반지름은 파생 검사용이며 JSON에 중복 저장하지 않는다. 큰 좌표/큰 bulge의 불필요한 제곱 오버플로를 피하는 연산을 사용한다. 그럼에도 극단적 double 입력의 반현/반지름/중심 계산이 비유한 또는 0으로 소실되면 numericRepresentationFailure다. 모든 수학적으로 유효한 실수 기하를 double로 처리할 수 있다고 보장하지 않는다. 수치 실패를 엔진 미지원이나 잘못된 bulge=0과 섞지 않는다.
 
 GeometryPath가 각 구간 시작점을 순서대로 정하므로 불연속 시작점을 따로 입력할 수 없다. 구간 순서 변경은 경로 자체가 달라지는 편집이고 그 새 경로를 다시 검증한다. 닫힌 경로는 마지막 구간이 명시적으로 start로 돌아온다. isClosed 플래그·자동 직선 추가·근접 좌표 병합은 없다. exact equality는 구조적 닫힘 검사이며 계산/제작 허용오차 정책이 아니다.
 
@@ -92,7 +94,7 @@ inch→millimeter는 25.4배, 반대는 25.4로 나눈다. 예를 들어 중심(
 | openBoundary | 마지막 끝점!=경로 시작점 | 자동 선분을 추가하지 않음 |
 | numericRepresentationFailure | 파생 반현/반지름/중심·원 극점·환산이 double로 처리 불가 | 수학적 잘못·소비자 미지원으로 바꾸지 않음 |
 
-전용 geometry_errors.dart의 GeometryValidationException은 code, fieldPath, GeometryDiagnostic을 제공한다. 진단은 operation, value/tag/expectedType, startX/startY/endX/endY/bulge의 명시적 필드다. 모든 정보가 항상 채워지는 것은 아니며 오류 원인에 필요한 값만 제공한다. 임의 Map·범용 오류 프레임워크는 없다. 중첩 오류의 prefixed는 같은 diagnostic 객체와 코드를 유지하고 fieldPath만 붙인다.
+전용 geometry_errors.dart의 GeometryValidationException은 code, fieldPath, 한국어 기본 설명과 GeometryDiagnostic을 출력한다. 진단은 operation과 작은 역할별 details의 합으로 구성한다. 타입·수치·태그·구간·원호 계산·원/원호 극점 상세를 나누어 관련 없는 nullable 필드를 누적하지 않는다. 상세 필드에는 의미와 단위 문맥을 주석으로 설명한다. 임의 Map·UI 다국어/로깅·범용 오류 프레임워크는 없다. prefixed는 같은 diagnostic/details 객체와 코드를 유지하고 fieldPath만 붙인다. 실제 타입과 원 중심·극점 방향도 12절처럼 제공한다.
 
 예: `boundaries[0].path.segments[0]`, code=numericRepresentationFailure, operation=deriveArcRadius, start=(0,0), end=(2,0), bulge=double.minPositive. 이는 미등록 엔진이 아니라 수치 파생 실패다. `path.segments[1].end`, code=openBoundary는 기대 시작점과 실제 마지막 끝점을 진단에 갖는다. 직접/생성 copyWith에서의 오류는 검증하는 하위 값 기준 경로이며 JSON 복원에서는 부모 경로를 붙인다. 여러 오류가 동시 발생할 때 순서를 호환 계약으로 고정하지 않는다.
 
@@ -157,7 +159,7 @@ workflow는 도안/저장 계약·수명·변환, 엔진은 자체 입력/지원
 
 이전 mm 고정 네 값 모델의 96개 테스트와 AOT 17건은 당시 코드 기록이다. 이번 교체 후 그 타입·JSON/테스트는 현행 계약이 아니다. 재설계 때의 '원은 반드시 두 원호'·'반원 이하만'·'구간별 start/end 중복' 권고도 최신 사용자 결정으로 제거했다. 과거 실행을 새 타입으로 재실행한 것처럼 바꾸지 않는다.
 
-## 11. 최종 검사 기록과 재현 명령
+## 11. 최소 기하 초기 구현 당시 검사 기록과 명령
 
 - 최종 analyze: No issues found. 전체 105개 테스트 통과. 기하 AOT 16건/기존 입력 AOT 14건 통과. 작은 좌표의 환산 소실/구간 붕괴도 수학적 입력 오류와 구분해 검사했다.
 - 입력 모델과 새 기하를 포함한 생성 파일 14개의 재생성 후 format 해시가 직전 결과와 일치했다. 생성 파일은 직접 편집하지 않았다.
@@ -178,3 +180,63 @@ $workflowDart = "$PWD/.toolchains/flutter-3.47.7/bin/cache/dart-sdk/bin/dart.exe
 ```
 
 소비자는 같은 AOT 파일을 bin/main.dart로 복사하고, 이 프로젝트 루트의 path 의존성만 선언한 별도 패키지다. 소비자 폴더에서 동일 SDK의 pub get, compile exe bin/main.dart -o consumer.exe, consumer.exe를 실행했다. SDK/캐시/빌드/소비자 파일은 Git에서 제외한다. 새 엔진 계산·충돌 검사·실제 제작 시험을 실행한 것은 아니다. 커밋·푸시는 하지 않았다.
+
+## 12. 수치 회귀·극점·진단 개선 검증 (2026-10-25 후속)
+
+시작 HEAD a4281cc, 변경·스테이징 없음. 기존 코드에서 먼저 두 Dart 회귀를 실행해 극소 bulge 사례는 잘못 거부되고, 큰 원호 극점 사례는 잘못 허용됨을 확인했다. 새 회귀 테스트 두 건이 의도대로 실패한 다음 수정했다. 기존 테스트의 업무 의미를 유지하고 진단 조회만 새 상세 타입에 맞췄다.
+
+### 진단 구조와 실제 출력
+
+GeometryErrorCode.description은 모든 코드에 개발자용 한국어 기본 설명을 제공한다. 예외 출력은 코드·필드 경로·설명·operation·필요한 details를 포함한다. 타입 오류에는 expectedType/actualType이 있고 null은 Null로 표시한다. UI 문구/다국어/로깅을 구현한 것은 아니다.
+
+GeometryDiagnostic은 operation+details 두 필드다. details는 이 기하 오류 전용의 작은 sealed 합으로 나눴다.
+
+| 상세 타입 | 필요한 정보와 단위 |
+|---|---|
+| GeometryTypeDetails | 기대/실제 타입 문자열. 길이값 아님 |
+| GeometryNumberDetails | 입력/환산 전 단일 수치. 해당 문맥 단위 또는 무차원 bulge |
+| GeometryTagDetails | 보정하지 않은 원래 태그 |
+| GeometrySegmentDetails | 구간 시작/끝점(문맥 단위), 원호일 때 bulge(무차원) |
+| GeometryArcCalculationDetails | 원래 구간과 실패 연산의 파생 수치(문맥 길이) |
+| GeometryCircleExtremumDetails | 실제 centerX/centerY/radius·direction·극점 좌표 value(문맥 길이) |
+| GeometryArcExtremumDetails | 원호의 구간 입력+해당 기반 원의 실패 극점 상세 |
+
+원 중심을 startX/startY로 표현하지 않는다. 원/원호 극점은 중심·반지름·positiveX/negativeX/positiveY/negativeY를 명시한다. segment는 원호 입력에만 쓰인다. 필드별 API 주석에 의미·단위를 적었다. 상세 타입은 필요한 정보만 필수로 가지며 모든 오류에 nullable 필드를 계속 더하는 구조보다 원인별 탐색이 쉽다. 범용 오류 자료 Map/프레임워크나 새 업무 모델은 없다.
+
+assert 비활성 AOT에서 실제 출력한 예:
+
+```text
+GeometryValidationException(code=invalidType, fieldPath=boundaries[0].center.x, 설명=필드의 값 타입이 기대 타입과 다릅니다., operation=readNumber, expectedType=num, actualType=String)
+GeometryValidationException(code=numericRepresentationFailure, fieldPath=segments[0], 설명=파생 계산 또는 단위 환산 결과를 double로 표현할 수 없습니다., operation=deriveArcExtremum, start=(1e+308, 0.0), end=(1e+308, 1e+308), bulge=2.0, center=(1.375e+308, 5e+307), radius=6.25e+307, direction=positiveX, value=Infinity)
+```
+
+중첩 JSON 복원은 하위 진단 객체·코드와 실제 원인값을 보존하고 `boundaries[0].path.segments[0]` 같은 부모 경로만 붙인다. prefixed의 객체 동일성과 복원 후 타입/구간/극점 값도 테스트했다. 예외 문자열을 파싱해 오류를 분류하지 않는다.
+
+### 중간 오버플로 수정
+
+반현 길이를 h, abs(bulge)를 b라 할 때 radius=h*b/2+h/(2*b), 중심의 현 법선 오프셋은 bulge 부호에 따라 h/(2*b)-h*b/2다. 기존처럼 0.5/b를 먼저 만들지 않고 길이와 나눗셈을 결합한다. 곱은 큰 인자를 먼저 반으로 나누고, 몫은 분자의 선행 소실도 피하는 순서를 선택한다. b가 1 부근일 때는 항별 언더플로/상쇄를 피하는 동치식을 사용한다. 이 분기는 연산 안정화를 위한 것이며 bulge 크기 제한·0 보정 정책이 아니다.
+
+start=(0,0), end=(2e-300,0), bulge=±1e-310은 반지름과 중심 오프셋 크기가 약 5e9로 유한해 이제 생성·copyWith·JSON 복원이 통과한다. 실제 반지름/중심이 표현 불가능한 경우는 deriveArcRadius/deriveArcCenterX 등의 numericRepresentationFailure로 계속 거부한다.
+
+### 실제 원호 위의 극점만 검사
+
+중심/반지름을 계산한 뒤 네 축 방향이 **그 원호가 차지하는 현의 반평면**에 있는지 먼저 판정한다. 단위 현 법선 n과 중심의 현 법선 오프셋 d, 반지름 r로 극점 방향 u의 부호는 d/r+n·u다. 양수 bulge의 원호는 유향 현 오른쪽, 음수는 왼쪽 원주다. 이 판정은 중심이 현 어느 쪽에 있는지에 따라 짧은/긴 원호를 자연스럽게 구분한다. 각도 차를 빼서 0/2π 경계를 처리하거나 제작 epsilon을 넣지 않는다.
+
+원호에 포함된 방향에 대해서만 centerX±radius 또는 centerY±radius를 계산해 유한성을 검사한다. 원호 밖의 기반 원 극점은 계산/거부하지 않는다. 이는 기하 관계/충돌 알고리즘이 아니라 기존 원호 수치 표현 검증의 보완이다.
+
+start=(1e308,0), end=(1e308,1e308), bulge=2는 중심=(1.375e308,5e307), 반지름=6.25e307까지 유한하지만 오른쪽 실제 극점이 Infinity이므로 이제 거부한다. 같은 기반 원의 반대쪽 짧은 원호를 전부 거부하지 않는다. 네 방향 회전·시계/반시계 반전, 반원/반원 초과, 각도 0 경계를 가로지르는 짧은 원호, 원호 밖의 극점을 별도로 검사했다.
+
+### 실행 결과
+
+- 전용 Dart3.13.5에서 format·analyze 성공, 전체 136개 테스트(기존 105+수치/진단 회귀 31) 통과. 기존 원문/줄바꿈·기하 정상/오류 사례는 유지했다.
+- assert 비활성 AOT: 새 tool/verify_geometry_numeric_release.dart의 정상 원호 5건/오류 7건, 기존 기하 오류 16건·입력 오류 14건 및 정상 동작 통과. 위 실제 오류 예시는 이 새 AOT 출력이다.
+- 생성 소스는 직접 편집하지 않았다. build_runner 재생성 후 14개 생성 파일이 직전 해시와 같고 최종 정적 분석도 문제 없음이다. 새 의존성·업무 모델·UI·엔진·DXF는 추가하지 않았다.
+- 자기 교차·포함·간섭·면적·제작 공차·일반 CAD 계산 기능은 여전히 미구현이다. 형상·JSON 필드나 단위 환산의 업무 의미는 바뀌지 않았고 진단의 평면 필드는 역할별 details로 바뀌었다. 스테이징·커밋·푸시는 하지 않는다.
+
+기존 11절 명령에 아래 수치 회귀 AOT를 더해 실행했다.
+
+```powershell
+& $workflowDart format lib test tool/verify_geometry_numeric_release.dart
+& $workflowDart compile exe tool/verify_geometry_numeric_release.dart -o build/verify_geometry_numeric_release.exe
+& ./build/verify_geometry_numeric_release.exe
+```

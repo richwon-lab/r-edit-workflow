@@ -302,8 +302,14 @@ void main() {
       expect(e.code, GeometryErrorCode.numericRepresentationFailure);
       expect(e.fieldPath, 'segments[0]');
       expect(e.diagnostic.operation, 'deriveArcRadius');
-      expect(e.diagnostic.bulge, double.minPositive);
-      expect(e.diagnostic.endX, 2);
+      expect(
+        (e.diagnostic.details as GeometryArcCalculationDetails).segment.bulge,
+        double.minPositive,
+      );
+      expect(
+        (e.diagnostic.details as GeometryArcCalculationDetails).segment.endX,
+        2,
+      );
     }
     expect(
       () => CircleBoundary(
@@ -359,9 +365,18 @@ void main() {
     } on GeometryValidationException catch (e) {
       expect(e.fieldPath, 'boundaries[0].path.segments[0]');
       expect(e.code, GeometryErrorCode.numericRepresentationFailure);
-      expect(e.diagnostic.startX, 0);
-      expect(e.diagnostic.endX, 2);
-      expect(e.diagnostic.bulge, double.minPositive);
+      expect(
+        (e.diagnostic.details as GeometryArcCalculationDetails).segment.startX,
+        0,
+      );
+      expect(
+        (e.diagnostic.details as GeometryArcCalculationDetails).segment.endX,
+        2,
+      );
+      expect(
+        (e.diagnostic.details as GeometryArcCalculationDetails).segment.bulge,
+        double.minPositive,
+      );
     }
   });
   final parsers = <(String, Map<String, Object?>, Object Function(Object?))>[
@@ -431,7 +446,7 @@ void main() {
       fail('지원되지 않는 단위');
     } on GeometryValidationException catch (e) {
       expect(e.fieldPath, 'coordinateSpace.lengthUnit');
-      expect(e.diagnostic.tag, 'pixel');
+      expect((e.diagnostic.details as GeometryTagDetails).tag, 'pixel');
     }
   });
 }

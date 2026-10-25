@@ -28,7 +28,10 @@ final class DrawingCoordinateSpace with _$DrawingCoordinateSpace {
       throw GeometryValidationException(
         GeometryErrorCode.unsupportedTag,
         'lengthUnit',
-        GeometryDiagnostic(operation: 'readLengthUnit', tag: tag),
+        GeometryDiagnostic(
+          operation: 'readLengthUnit',
+          details: GeometryTagDetails(tag),
+        ),
       );
     }
     checkGeometryFields(object, const {'lengthUnit'});
@@ -55,7 +58,7 @@ double convertGeometryLength(
       fieldPath,
       GeometryDiagnostic(
         operation: 'convertLength:${from.name}->${to.name}',
-        value: value,
+        details: GeometryNumberDetails(value),
       ),
     );
   }

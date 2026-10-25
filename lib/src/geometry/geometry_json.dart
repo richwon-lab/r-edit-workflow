@@ -1,12 +1,18 @@
 import 'geometry_errors.dart';
 
-// 이 기하 JSON 계약에서만 사용하는 구조 검사다. 업무 값은 생성자가 검사한다.
+// 이 기하 JSON 계약의 구조 검사다. 실제 업무 값은 생성자가 검사한다.
 Map<String, Object?> readGeometryObject(Object? json) {
   if (json is! Map<String, Object?>) {
-    throw const GeometryValidationException(
+    throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       r'$',
-      GeometryDiagnostic(operation: 'readObject', expectedType: 'object'),
+      GeometryDiagnostic(
+        operation: 'readObject',
+        details: GeometryTypeDetails(
+          expectedType: 'object',
+          actualType: json.runtimeType.toString(),
+        ),
+      ),
     );
   }
   return json;
@@ -29,18 +35,31 @@ String readGeometryString(Map<String, Object?> object, String key) {
     throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       key,
-      const GeometryDiagnostic(operation: 'readString', expectedType: 'String'),
+      GeometryDiagnostic(
+        operation: 'readString',
+        details: GeometryTypeDetails(
+          expectedType: 'String',
+          actualType: value.runtimeType.toString(),
+        ),
+      ),
     );
   }
   return value;
 }
 
 void checkGeometryNumber(Map<String, Object?> object, String key) {
-  if (requireGeometryField(object, key) is! num) {
+  final value = requireGeometryField(object, key);
+  if (value is! num) {
     throw GeometryValidationException(
       GeometryErrorCode.invalidType,
       key,
-      const GeometryDiagnostic(operation: 'readNumber', expectedType: 'num'),
+      GeometryDiagnostic(
+        operation: 'readNumber',
+        details: GeometryTypeDetails(
+          expectedType: 'num',
+          actualType: value.runtimeType.toString(),
+        ),
+      ),
     );
   }
 }
@@ -62,7 +81,10 @@ void checkFiniteGeometryNumber(double value, String fieldPath) {
     throw GeometryValidationException(
       GeometryErrorCode.nonFiniteNumber,
       fieldPath,
-      GeometryDiagnostic(operation: 'checkFinite', value: value),
+      GeometryDiagnostic(
+        operation: 'checkFinite',
+        details: GeometryNumberDetails(value),
+      ),
     );
   }
 }
