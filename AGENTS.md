@@ -22,3 +22,7 @@
 - 직접 작성하는 주석·API 설명·테스트 설명·개발 문서는 한국어 중심으로 쓰고 확정한 공개 이름과 sealed 타입 구분을 따른다. 초기의 이전 이름·JSON·복수 오류 순서를 배포된 호환 계약으로 취급하지 않으며 구형 지원·별칭·마이그레이션을 만들지 않는다.
 - 프로젝트 전용 .toolchains/flutter-3.47.7의 포함 Dart를 명시 경로로 실행한다. 다른 프로젝트 SDK·전역 PATH는 바꾸지 않는다. 명령과 IntelliJ 경로는 README와 docs/freezed-migration.md를 따른다.
 - lib/src의 필요한 .freezed.dart·.g.dart는 Git 관리 대상이다. 생성 파일을 직접 수정하지 않고 재생성 일치를 확인한다. SDK·캐시·빌드·로컬 IDE 파일은 제외한다.
+
+## 테스트 구성
+
+- 개발 기준의 [테스트 배치와 이름](docs/development-rules-draft.md#테스트-배치와-이름)과 [책임별 배치·사례 대응표](docs/test-organization.md)를 따른다. 구현 도구 대신 공개 계약별로 사례를 추가하고 파일별 독립 실행을 유지한다.

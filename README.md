@@ -68,6 +68,8 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 
 ## 개발과 검증
 
+[책임별 테스트 파일과 기존 사례 대응표](docs/test-organization.md)에 테스트 배치·명명 기준과 실제 실행 결과를 기록한다.
+
 프로젝트 전용 `.toolchains/flutter-3.47.7`의 포함 Dart 3.13.5 stable을 사용하며 SDK 제약은 `^3.13.5`다. 패키지 runtime은 Flutter에 의존하지 않는다. 공유 SDK·전역 PATH는 변경하지 않는다. 영구 SDK·IntelliJ 경로와 소비자 영향은 [전환 기록](docs/freezed-migration.md)에 있다.
 
 ```powershell
