@@ -18,6 +18,7 @@ part 'cutout_definition.g.dart';
 )
 @JsonSerializable()
 final class CutoutDefinition with _$CutoutDefinition {
+  /// 빈 cutoutId를 거부하고 경계를 보정 없이 보관한다. ID 중복은 소유 DesignGeometry에서 검사한다.
   CutoutDefinition({required this.cutoutId, required this.boundary}) {
     if (cutoutId.isEmpty) {
       throw DesignValidationException(
@@ -36,6 +37,9 @@ final class CutoutDefinition with _$CutoutDefinition {
   /// 제거되는 내부 영역의 실제 경계다. 원형/사각형/장공 모두 같은 타입이다.
   @JsonKey(fromJson: _readCutoutBoundary, toJson: writeBoundary)
   final ClosedBoundary boundary;
+
+  /// cutoutId와 boundary를 복원한다. 도안 구조/ID 오류와 하위 기하 오류를 구분해 전달한다.
+  /// 경계 실패 경로에는 boundary를 붙이며 수치 진단은 유지한다.
   factory CutoutDefinition.fromJson(Object? json) {
     final object = readDesignObject(json);
     readDesignString(object, 'cutoutId');
@@ -43,6 +47,8 @@ final class CutoutDefinition with _$CutoutDefinition {
     checkDesignFields(object, const {'cutoutId', 'boundary'});
     return _$CutoutDefinitionFromJson(object);
   }
+
+  /// 관통 ID와 실제 경계를 새 JSON 값으로 내보낸다. 설비·가공 순서·포함 여부는 추가하지 않는다.
   Map<String, Object?> toJson() => _$CutoutDefinitionToJson(this);
 
   /// 문맥 단위를 명시해 경계만 환산하고 안정 ID는 보존한다.

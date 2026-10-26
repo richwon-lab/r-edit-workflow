@@ -40,6 +40,7 @@ GeometryPath rotatedArc(
   double ey,
   double bulge,
   int turns,
+  // 회전/역전 회귀 행렬의 기존 위치 인자 순서를 보존하는 테스트 전용 예외다.
   // ignore: avoid_positional_boolean_parameters
   bool reverse,
 ) {

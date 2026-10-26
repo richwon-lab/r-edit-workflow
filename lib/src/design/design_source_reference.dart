@@ -16,6 +16,7 @@ part 'design_source_reference.g.dart';
 )
 @JsonSerializable()
 final class DesignSourceReference with _$DesignSourceReference {
+  /// 빈 공용 ID 또는 지정된 빈 버전을 거부한다. sourceRevision 생략은 미상이며 latest로 채우지 않는다.
   DesignSourceReference({required this.sourceDesignId, this.sourceRevision}) {
     checkProductIdentifier(
       sourceDesignId,
@@ -38,6 +39,8 @@ final class DesignSourceReference with _$DesignSourceReference {
   /// 버전 체계·최신성은 검사하지 않고 임의 버전으로 보정하지 않는다.
   @JsonKey(includeIfNull: false)
   final String? sourceRevision;
+
+  /// 출처 ID와 알려진 버전만 복원한다. sourceRevision의 생략/null을 허용하되 다른 타입·빈 문자열은 제품 값 오류다.
   factory DesignSourceReference.fromJson(Object? json) {
     final object = readProductObject(json);
     checkProductString(object, 'sourceDesignId');
@@ -45,5 +48,7 @@ final class DesignSourceReference with _$DesignSourceReference {
     checkProductFields(object, const {'sourceDesignId', 'sourceRevision'});
     return _$DesignSourceReferenceFromJson(object);
   }
+
+  /// 출처 기록을 내보내며 미상 버전은 생략한다. 실제 원본 조회나 버전 최신성 검사는 수행하지 않는다.
   Map<String, Object?> toJson() => _$DesignSourceReferenceToJson(this);
 }

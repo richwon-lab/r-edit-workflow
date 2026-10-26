@@ -1,4 +1,4 @@
-/// R-edit의 영역별 원문·줄 입력과 최소 기하 값를 위한 공개 API.
+/// R-edit의 영역별 원문·줄 입력과 최소 기하 값을 위한 공개 API.
 library;
 
 export 'src/design/applied_design_geometry.dart' show AppliedDesignGeometry;
@@ -58,10 +58,7 @@ export 'src/product/product_design_validation.dart'
     show validateProductDesignConfiguration;
 export 'src/product/product_input.dart' show ProductInput;
 export 'src/text_area_input.dart'
-    show
-        AutomaticLineBreak,
-        LineBreakInput,
-        SpecifiedLineBreak,
-        TextAreaInput,
-        TextInputErrorCode,
-        TextInputValidationException;
+    show AutomaticLineBreak, LineBreakInput, SpecifiedLineBreak, TextAreaInput;
+
+export 'src/text_input_errors.dart'
+    show TextInputErrorCode, TextInputValidationException;

@@ -123,3 +123,10 @@ CutoutDefinition/TextAreaDefinition은 안정 ID를 보존하고 각각의 소�
 validateTextAreaInputs는 정의당 입력 1개를 areaId로 대조해 중복/미정의/누락을 독립 진단한다. 순서/label/좌표로 추정하지 않고 입력을 수정/보충하지 않는다. 영역 0개·입력 0개에서 오류가 없어도 계산/저장 완료를 뜻하지 않는다. 업무 오류는 DesignErrorCode/DesignValidationException/DesignValidationIssue로 분리하고 하위 기하 오류는 코드/진단을 잃지 않게 경로만 연결한다.
 
 전체 AppliedDesign·제품/작업 문서·공유 명령·결과 무효화·제작 조건/장식·엔진·DXF·저장·UI·동기화는 미구현이다. 단일 외곽은 첫 구성 범위이며 프로그램 전체의 최종 지원 제한이 아니다.
+
+## 공개 설명·문구 오류 위치
+
+현재 [계약 감사](library-contract-audit.md)의 공개/내부 책임 구분과 검증 범위를 따른다.
+TextInputErrorCode·TextInputValidationException은 lib/src/text_input_errors.dart에 분리했으며
+lib/r_edit_workflow.dart에서 기존 이름 그대로 export한다. 모델/JSON/오류 조건·경로는 유지한다.
+enum description과 예외 출력의 한국어 원인은 개발자용이며 사용자 화면 문구나 정상 판정이 아니다.

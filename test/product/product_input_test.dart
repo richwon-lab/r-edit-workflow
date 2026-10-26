@@ -134,6 +134,16 @@ void main() {
         final cause = e.cause as TextInputValidationException;
         expect(cause.code, TextInputErrorCode.specifiedLinesMismatchSourceText);
         expect(cause.fieldPath, 'lineBreak.lines');
+        expect(
+          e.toString(),
+          allOf(
+            contains('textInputs[0].lineBreak.lines'),
+            contains('code=specifiedLinesMismatchSourceText'),
+            contains('fieldPath=lineBreak.lines'),
+            contains('지정 줄을 순서대로 연결한 내용이 원문과 다릅니다.'),
+          ),
+        );
+        expect(identical(e.prefixed('products[0]').cause, cause), isTrue);
       }
     });
     for (final field in ['productId', 'appliedGeometryId', 'textInputs']) {

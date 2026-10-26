@@ -31,11 +31,13 @@ enum GeometryErrorCode {
   openBoundary,
 
   /// 유한 입력의 파생 값/환산이 double로 표현되지 않거나 0으로 소실된다.
+  /// 환산 정밀도 소실로 서로 다른 구간 끝점이 같아진 경우도 포함한다.
   numericRepresentationFailure,
 }
 
 /// 오류 코드의 개발자용 한국어 기본 설명이다. 사용자 UI 번역 계약이 아니다.
 extension GeometryErrorExplanation on GeometryErrorCode {
+  /// 입력 오류와 수치 표현 실패를 구분하는 개발자 설명이다. 진단 값·연산은 예외의 diagnostic에서 조회한다.
   String get description => switch (this) {
     GeometryErrorCode.missingField => '필수 필드가 없습니다.',
     GeometryErrorCode.invalidType => '필드의 값 타입이 기대 타입과 다릅니다.',
@@ -54,11 +56,13 @@ extension GeometryErrorExplanation on GeometryErrorCode {
 
 /// 현재 기하 오류에 필요한 작은 상세 유형의 합이다. 범용 오류 자료가 아니다.
 sealed class GeometryDiagnosticDetails {
+  /// 기하 오류별로 필요한 상세 유형을 제한한다. 길이 단위는 상세를 만든 도안 문맥에서 해석한다.
   const GeometryDiagnosticDetails();
 }
 
 /// JSON 타입 불일치의 기대/실제 타입이다. 값이나 길이 단위가 아니다.
 final class GeometryTypeDetails extends GeometryDiagnosticDetails {
+  /// JSON 경계가 요구한 타입과 실제 runtimeType을 기록한다. 입력값은 재검증하거나 덤프하지 않는다.
   const GeometryTypeDetails({
     required this.expectedType,
     required this.actualType,
@@ -75,6 +79,7 @@ final class GeometryTypeDetails extends GeometryDiagnosticDetails {
 
 /// 단일 수치의 원인 값이다. 길이는 해당 도안 문맥 단위, bulge는 무차원이다.
 final class GeometryNumberDetails extends GeometryDiagnosticDetails {
+  /// 실패 입력/환산 전 수치를 기록한다. 길이 또는 무차원의 구분은 타입과 operation 설명을 따른다.
   const GeometryNumberDetails(this.value);
 
   /// 실패한 입력 또는 환산 전 수치다. 연산 의미는 diagnostic.operation을 따른다.
@@ -85,6 +90,7 @@ final class GeometryNumberDetails extends GeometryDiagnosticDetails {
 
 /// 해석하지 못한 기하 종류/단위 태그다.
 final class GeometryTagDetails extends GeometryDiagnosticDetails {
+  /// 해석하지 못한 단위/종류 문자열을 보정 없이 기록한다. 지원 태그를 새로 정의하지 않는다.
   const GeometryTagDetails(this.tag);
 
   /// 보정하지 않은 원래 문자열이며 수치 단위가 아니다.
@@ -95,6 +101,7 @@ final class GeometryTagDetails extends GeometryDiagnosticDetails {
 
 /// 도안 문맥 단위의 구간 양끝점이다. 원 중심을 이 필드로 표현하지 않는다.
 final class GeometrySegmentDetails extends GeometryDiagnosticDetails {
+  /// 해석된 양끝 좌표와 선택적 원호 bulge를 기록한다. 동일 끝점/닫힘 조건 자체를 검사하지 않는다.
   const GeometrySegmentDetails({
     required this.startX,
     required this.startY,
@@ -124,6 +131,7 @@ final class GeometrySegmentDetails extends GeometryDiagnosticDetails {
 
 /// 원호 파생 계산 실패의 입력 구간과 실패 수치다.
 final class GeometryArcCalculationDetails extends GeometryDiagnosticDetails {
+  /// 실패 원호 입력과 파생 수치를 연결한다. value의 의미와 단위는 실제 operation을 따른다.
   const GeometryArcCalculationDetails({
     required this.segment,
     required this.value,
@@ -139,10 +147,23 @@ final class GeometryArcCalculationDetails extends GeometryDiagnosticDetails {
 }
 
 /// 설계 좌표계에서 원의 네 극점 방향이다. 회전/가공 방향이 아니다.
-enum GeometryExtremumDirection { positiveX, negativeX, positiveY, negativeY }
+enum GeometryExtremumDirection {
+  /// 중심에서 오른쪽 극점이다. 실패 value는 centerX+radius다.
+  positiveX,
+
+  /// 중심에서 왼쪽 극점이다. 실패 value는 centerX-radius다.
+  negativeX,
+
+  /// 중심에서 위쪽 극점이다. 실패 value는 centerY+radius다.
+  positiveY,
+
+  /// 중심에서 아래쪽 극점이다. 실패 value는 centerY-radius다.
+  negativeY,
+}
 
 /// 원 중심·반지름과 특정 극점 계산 결과다. 길이는 검사 대상 도안 문맥을 따른다.
 final class GeometryCircleExtremumDetails extends GeometryDiagnosticDetails {
+  /// 원의 중심·반지름·실패 극점 방향과 그 축의 계산값을 보존한다. 구간 시작점으로 오해하지 않는다.
   const GeometryCircleExtremumDetails({
     required this.centerX,
     required this.centerY,
@@ -172,6 +193,7 @@ final class GeometryCircleExtremumDetails extends GeometryDiagnosticDetails {
 
 /// 원호 위 극점의 오류다. 원호 입력과 그 기반 원/실패 방향을 함께 보존한다.
 final class GeometryArcExtremumDetails extends GeometryDiagnosticDetails {
+  /// 실제 원호 구간과 그 위에 포함되는 실패 극점의 상세를 연결한다. 원 전체의 미포함 극점 오류가 아니다.
   const GeometryArcExtremumDetails({
     required this.segment,
     required this.extremum,
@@ -188,6 +210,7 @@ final class GeometryArcExtremumDetails extends GeometryDiagnosticDetails {
 
 /// 오류를 만든 연산과 해당 오류에만 필요한 구조화 상세다.
 final class GeometryDiagnostic {
+  /// 실패 연산과 그 오류에 필요한 상세만 기록한다. 필드 경로는 이 진단이 아닌 상위 예외가 소유한다.
   const GeometryDiagnostic({required this.operation, this.details});
 
   /// 실패 연산의 개발자용 이름이다. convertLength 등은 원본/대상 단위도 표시한다.
@@ -203,6 +226,7 @@ final class GeometryDiagnostic {
 
 /// [fieldPath]는 모델/JSON 필드 위치다. [diagnostic]은 중첩 시 원형을 보존한다.
 final class GeometryValidationException implements Exception {
+  /// 기하 오류 코드·모델 상대 경로·진단 객체를 보존한다. 생성 자체가 형상 검사를 다시 수행하지 않는다.
   const GeometryValidationException(this.code, this.fieldPath, this.diagnostic);
 
   /// 기계적으로 판별하는 실패 코드다.

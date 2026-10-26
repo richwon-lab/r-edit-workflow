@@ -47,11 +47,13 @@ enum DesignErrorCode {
 
 /// 정의/연결 오류에 필요한 도안 전용 상세다. 기하 진단을 대체하지 않는다.
 sealed class DesignIssueDetails {
+  /// 도안 진단의 세부 유형을 제한하는 기반 생성자다. 진단 데이터를 재검증하지 않는다.
   const DesignIssueDetails();
 }
 
 /// 원래 식별 문자열이다. 표시 이름이나 좌표에서 추정한 값이 아니다.
 final class DesignIdentifierDetails extends DesignIssueDetails {
+  /// 원래 식별 문자열을 복사/보정 없이 기록한다. ID 유효성 검사는 실제 도안 생성자의 책임이다.
   const DesignIdentifierDetails(this.identifier);
 
   /// trim/정규화하지 않은 cutoutId 또는 areaId다.
@@ -62,6 +64,7 @@ final class DesignIdentifierDetails extends DesignIssueDetails {
 
 /// 같은 소유 목록에서 중복된 ID의 두 위치다.
 final class DesignDuplicateDetails extends DesignIssueDetails {
+  /// 같은 소유 목록의 두 0 기반 위치와 중복 ID를 기록한다. 목록 자체의 검사 API는 아니다.
   const DesignDuplicateDetails({
     required this.identifier,
     required this.firstIndex,
@@ -83,6 +86,7 @@ final class DesignDuplicateDetails extends DesignIssueDetails {
 
 /// JSON 경계의 기대/실제 타입이며 기하 길이 단위와 무관하다.
 final class DesignTypeDetails extends DesignIssueDetails {
+  /// 실패한 JSON 경계가 기대한 타입과 실제 runtimeType을 기록한다. 원문 값은 보관하지 않는다.
   const DesignTypeDetails({
     required this.expectedType,
     required this.actualType,
@@ -99,6 +103,7 @@ final class DesignTypeDetails extends DesignIssueDetails {
 
 /// 정의 구성 또는 입력 연결의 실패다. 성공/배치 완료 상태를 저장하지 않는다.
 final class DesignValidationIssue {
+  /// 한 진단의 코드·상대 경로·상세를 묶는다. 오류 조건을 다시 실행하거나 정상 판정을 생성하지 않는다.
   const DesignValidationIssue({
     required this.code,
     required this.fieldPath,
@@ -127,6 +132,7 @@ final class DesignValidationIssue {
 
 /// 도안 값 구성의 검증 실패를 전달한다. 연결 API는 별도로 issue 목록을 반환한다.
 final class DesignValidationException implements Exception {
+  /// 단독 도안 값 생성/복원의 첫 실패를 보존한다. 입력 대조의 복수 issue 반환과 구분한다.
   const DesignValidationException(this.issue);
 
   /// 원인 코드·필드 경로·명시적 상세다.

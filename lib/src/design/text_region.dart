@@ -17,6 +17,8 @@ part 'text_region.g.dart';
 )
 @JsonSerializable()
 final class TextRegion with _$TextRegion {
+  /// 외부 경계와 제외 목록을 보관하고 목록을 방어 복사한다. 빈 제외 목록은 허용한다.
+  /// 제외 경계를 관통 구멍에서 유추하지 않으며 외부 경계 안 포함 여부도 검사하지 않는다.
   TextRegion({required this.outer, required List<ClosedBoundary> exclusions})
     : exclusions = List.unmodifiable(exclusions);
 
@@ -27,6 +29,9 @@ final class TextRegion with _$TextRegion {
   /// 명시적으로 지정된 제외 경계다. 빈 목록은 제외 없음이며 필드 누락과 다르다.
   @JsonKey(fromJson: _readExclusions, toJson: _writeBoundaries)
   final List<ClosedBoundary> exclusions;
+
+  /// outer와 exclusions를 필수로 복원한다. 제외 목록의 실패 위치는 exclusions의 0 기반 인덱스다.
+  /// 도안 구조 오류 또는 경로를 연결한 원래 GeometryValidationException을 전달한다.
   factory TextRegion.fromJson(Object? json) {
     final object = readDesignObject(json);
     requireDesignField(object, 'outer');
@@ -34,6 +39,8 @@ final class TextRegion with _$TextRegion {
     checkDesignFields(object, const {'outer', 'exclusions'});
     return _$TextRegionFromJson(object);
   }
+
+  /// 외부/제외 경계를 분리된 JSON 목록으로 내보낸다. 자동 차집합이나 영역 분할 결과가 아니다.
   Map<String, Object?> toJson() => _$TextRegionToJson(this);
 
   /// 외부/제외 경계를 함께 환산하며 관계를 자동 보정하거나 분할하지 않는다.

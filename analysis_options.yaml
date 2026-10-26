@@ -17,8 +17,8 @@ analyzer:
 
 linter:
   rules:
-    # 기존 공개 계약의 문서 누락은 계약 점검표에서 추적한다.
-    public_member_api_docs: false
+    # 직접 작성한 공개 멤버와 내부 library 간 도우미의 API 설명을 검사한다.
+    public_member_api_docs: true
     # 한국어 업무 설명의 자연스러운 줄 길이를 허용한다.
     lines_longer_than_80_chars: false
     # 기존 값 모델의 선언 문맥·Dart 표기를 일괄 변경하지 않는다.

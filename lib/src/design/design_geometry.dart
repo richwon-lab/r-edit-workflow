@@ -21,6 +21,8 @@ part 'design_geometry.g.dart';
 )
 @JsonSerializable()
 final class DesignGeometry with _$DesignGeometry {
+  /// 목록을 방어 복사하고 각각의 cutouts/textAreas 범위에서 ID 중복을 거부한다.
+  /// 빈 목록은 허용하며 서로 다른 ID 종류는 같은 문자열이어도 충돌하지 않는다. 경계 관계는 타입 설명의 범위 밖이다.
   DesignGeometry({
     required this.coordinateSpace,
     required this.outline,
@@ -82,6 +84,8 @@ final class DesignGeometry with _$DesignGeometry {
   @JsonKey(fromJson: _readTextAreas, toJson: _writeTextAreas)
   final List<TextAreaDefinition> textAreas;
 
+  /// 문맥·외곽·관통 목록·영역 목록의 필수 구조와 소유 ID를 검사해 복원한다.
+  /// 도안 오류는 DesignValidationException, 하위 기하 오류는 목록 인덱스/필드 경로와 원래 diagnostic을 보존해 전달한다.
   factory DesignGeometry.fromJson(Object? json) {
     final object = readDesignObject(json);
     for (final key in ['coordinateSpace', 'outline', 'cutouts', 'textAreas']) {
@@ -95,6 +99,8 @@ final class DesignGeometry with _$DesignGeometry {
     });
     return _$DesignGeometryFromJson(object);
   }
+
+  /// 유일한 단위 문맥과 역할별 경계를 새 JSON으로 내보낸다. 입력 원문·계산/저장 판정은 포함하지 않는다.
   Map<String, Object?> toJson() => _$DesignGeometryToJson(this);
 
   /// 단위는 유지하고 구성요소만 교체해 소유 ID 검증을 다시 수행한다.

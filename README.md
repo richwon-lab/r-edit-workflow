@@ -86,8 +86,8 @@ IntelliJ Dart 경로는 이 저장소의 .fvm/flutter_sdk/bin/cache/dart-sdk다.
 검증 도구는 생성·포맷·분석·전체 테스트·재생성 안정성·5개 AOT·독립 소비자를 검사한다.
 [소비자 예제](example/product_configuration.dart)는 공개 API로 형상/영역/제품 참조와 JSON 왕복을 구성한다.
 소비자가 생성하지 않도록 생성 소스를 추적한다.
-2026-10-26 로컬 417개 테스트와 AOT/소비자 실행이 성공했다.
-[계약 감사](docs/library-contract-audit.md)에 실제 보장과 개별 API 설명 누락 141건을 기록했다.
+현재 로컬 검증은 431개 테스트와 AOT/소비자 실행이 성공했다.
+[계약 감사](docs/library-contract-audit.md)의 초기 141건을 외부 API/내부 도우미로 대조해 보완했다. 현재 문서 lint 누락은 0건이다.
 Actions는 무료 운용 경계를 설정했으며 원격 실행은 하지 않았다.
 현재 네이밍·JSON과 실제 검사 결과는 [초기 정리 기록](docs/input-naming-json.md)에 있다. 이전 70개 테스트·AOT 실행 결과는 [당시 전환 기록](docs/freezed-migration.md)에 보존한다.
 이 결과는 영역 입력 모델 검증이며 실제 배치·저장·출력·Type3 검증이 아니다.
@@ -147,3 +147,8 @@ JSON 경계에서는 구조·필수·타입·방식을 검사하고 업무 값 �
 생성 소스 검증은 시작 상태와 첫 생성 결과의 일치, 반복 생성 안정성을 따로 검사한다.
 CI에서는 생성 소스의 Git 포함 상태도 검사하며 로컬 기본 실행은 HEAD와 비교하지 않는다.
 실패 후 재생성·검토·재검사 절차와 실제 결과는 [개발 기준](docs/development-foundation.md)의 생성 소스 검증 계약을 따른다.
+
+공개 API 설명과 문구 오류는 [현재 감사 결과](docs/library-contract-audit.md)를 따른다.
+문구 오류 구현은 lib/src/text_input_errors.dart이며 공개 import 이름·JSON·검증 조건은 유지한다.
+기본 한국어 원인 설명은 개발자 진단용이다. public_member_api_docs를 활성화했고
+현재 분석 No issues found, 전체 431개 테스트·AOT 5개·독립 소비자 검증이 통과했다.

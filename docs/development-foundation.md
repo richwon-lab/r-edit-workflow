@@ -91,8 +91,8 @@ tag checkout의 channel은 user-branch로 표시된다. 공식 해시를 대조�
 ## 지속 적용 규칙
 
 - very_good_analysis와 strict-casts, strict-inference, strict-raw-types를 적용한다. 생성 소스·SDK·캐시·빌드·독립된 과거 비교 자료를 제외한다.
-- 명시적 기존 스타일 예외: public_member_api_docs, lines_longer_than_80_chars, unnecessary_type_name_in_constructor, sort_constructors_first, unnecessary_lambdas, cast_nullable_to_non_nullable, no_default_cases, prefer_foreach, cascade_invocations.
-- 문서 lint 예외는 기존 누락 추적용이며 신규 API 설명 면제가 아니다. nullable cast는 구조/타입 검사 뒤 JSON 경계와 의도적 오류 테스트에서만 허용한다. implicit dynamic·unchecked downcast를 추가하지 않는다.
+- 명시적 기존 스타일 예외: lines_longer_than_80_chars, unnecessary_type_name_in_constructor, sort_constructors_first, unnecessary_lambdas, cast_nullable_to_non_nullable, no_default_cases, prefer_foreach, cascade_invocations.
+- public_member_api_docs를 활성화하여 직접 작성한 공개 멤버와 내부 library 간 도우미의 설명을 검사한다. nullable cast는 구조/타입 검사 뒤 JSON 경계와 의도적 오류 테스트에서만 허용한다. implicit dynamic·unchecked downcast를 추가하지 않는다.
 - 영어 식별자/Dart 표기, 한국어 중심 주석·API·테스트 설명을 사용한다. 공개 생성자·필드·변환은 단위·불변식·실패 조건·검사하지 않는 책임을 설명한다.
 - 공개 진입점만 소비한다. 오류는 책임별 전용 파일에 발생 조건·경로·형식 있는 진단을 둔다. 임의 Map·범용 오류 프레임워크·utils/common을 늘리지 않는다.
 - 전용 변환·검증은 모델 가까이 두고 실제 공유 코드만 책임별로 분리한다. 모든 파일을 part로 묶지 않는다.
@@ -245,3 +245,12 @@ test/tool/generated_sources_test.dart는 시스템 임시 디렉터리의 독립
 생성기가 쓰는 LF와 일치하도록 .gitattributes를 lib/**/*.g.dart와 lib/**/*.freezed.dart에만 적용했다.
 다른 파일의 줄 끝 정책은 바꾸지 않았다. 임시 Git 저장소를 core.autocrlf=true로 clone해
 두 생성 확장자의 LF 바이트 보존을 확인했다.
+
+## 공개 API 설명·문구 오류 정리 (2026-10-26)
+
+[현재 계약 감사](library-contract-audit.md)에 초기 141건(외부 API 118/내부 도우미 23)의 대조 결과를 기록했다.
+문서 lint 누락은 0건이며 기존 document_ignores 안내도 필요한 예외의 근거를 명시해 해소했다.
+문구 오류는 lib/src/text_input_errors.dart에 두고 공개 진입점의 기존 이름을 유지한다.
+개발자용 기본 설명을 사용자 화면의 확정 문구로 취급하지 않는다.
+현재 전체 테스트 431개·AOT 5개·독립 소비자·시작 생성 일치/반복 안정성 검사가 통과했다.
+원격 CI·Linux·Dartdoc HTML 렌더링은 미실행이다.

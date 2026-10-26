@@ -21,6 +21,8 @@ part 'product_design_configuration.g.dart';
 )
 @JsonSerializable()
 final class ProductDesignConfiguration with _$ProductDesignConfiguration {
+  /// 목록을 방어 복사하고 validateProductDesignConfiguration의 모든 독립 issue를 검사한 뒤에만 생성한다.
+  /// 오류가 있으면 ProductDesignValidationException으로 거부하며 일부 참조를 임의 선택하지 않는다.
   ProductDesignConfiguration({
     required List<AppliedDesignGeometry> appliedGeometries,
     required List<ProductInput> products,
@@ -38,6 +40,9 @@ final class ProductDesignConfiguration with _$ProductDesignConfiguration {
   /// 독립 원문·줄바꿈 입력을 가진 제품 목록이다. 순서·입력을 보정하지 않는다.
   @JsonKey(fromJson: _readProducts, toJson: _writeProducts)
   final List<ProductInput> products;
+
+  /// 두 필수 목록을 복원한 뒤 생성자와 같은 현재 참조 검증을 수행한다.
+  /// 하위 값의 원인/경로와 독립 참조 issue를 구분하며 전체 작업 파일을 복원하는 API는 아니다.
   factory ProductDesignConfiguration.fromJson(Object? json) {
     final object = readProductObject(json);
     requireProductField(object, 'appliedGeometries');
@@ -45,6 +50,8 @@ final class ProductDesignConfiguration with _$ProductDesignConfiguration {
     checkProductFields(object, const {'appliedGeometries', 'products'});
     return _$ProductDesignConfigurationFromJson(object);
   }
+
+  /// 실제 적용 내용과 제품 참조를 분리된 JSON 값으로 내보낸다. 전체 저장 스키마나 저장 가능 판정이 아니다.
   Map<String, Object?> toJson() => _$ProductDesignConfigurationToJson(this);
 }
 

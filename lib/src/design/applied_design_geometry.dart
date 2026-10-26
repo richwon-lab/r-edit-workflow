@@ -19,6 +19,8 @@ part 'applied_design_geometry.g.dart';
 )
 @JsonSerializable()
 final class AppliedDesignGeometry with _$AppliedDesignGeometry {
+  /// 빈 적용 ID를 거부한다. 실제 내용은 불변 값으로 공유하며 source 생략은 출처 없음이다.
+  /// 동일 ID의 과거 내용 변경 검사는 이 생성자가 아닌 후속 변경 경계의 책임이다.
   AppliedDesignGeometry({
     required this.appliedGeometryId,
     required this.geometry,
@@ -41,6 +43,9 @@ final class AppliedDesignGeometry with _$AppliedDesignGeometry {
   /// 선택적 출처 기록이다. 생략/null은 기록 없음, 출력에서는 생략한다.
   @JsonKey(fromJson: _readSource, toJson: _writeSource, includeIfNull: false)
   final DesignSourceReference? source;
+
+  /// 필수 적용 ID·geometry와 선택 source를 복원한다. null source는 없음으로 처리한다.
+  /// 제품 값 오류는 ProductDesignValidationException, 중첩 도안/기하 오류는 원인을 보존한 ProductDesignNestedException으로 전달한다.
   factory AppliedDesignGeometry.fromJson(Object? json) {
     final object = readProductObject(json);
     checkProductString(object, 'appliedGeometryId');
@@ -52,6 +57,8 @@ final class AppliedDesignGeometry with _$AppliedDesignGeometry {
     });
     return _$AppliedDesignGeometryFromJson(object);
   }
+
+  /// 실제 형상·영역을 독립 JSON으로 내보내고 없는 source는 생략한다. 공용 원본 재조회용 포인터가 아니다.
   Map<String, Object?> toJson() => _$AppliedDesignGeometryToJson(this);
 }
 

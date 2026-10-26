@@ -21,6 +21,8 @@ part 'geometry_path.g.dart';
 )
 @JsonSerializable()
 final class GeometryPath with _$GeometryPath {
+  /// 구간을 방어 복사하고 빈 목록·같은 양끝점·원호 파생 수치의 표현 불가를 거부한다.
+  /// 구간 시작점은 첫 start 또는 직전 end다. 검사 범위와 단위는 타입 설명을 따른다.
   GeometryPath({required this.start, required List<PathSegment> segments})
     : segments = List.unmodifiable(segments) {
     if (this.segments.isEmpty) {
@@ -56,11 +58,16 @@ final class GeometryPath with _$GeometryPath {
       segmentStart = segment.end;
     }
   }
+
+  /// 첫 구간의 시작점이다. 이후 시작점은 직전 구간 끝점이므로 중복 저장하지 않는다.
   @JsonKey(fromJson: _readPathStart, toJson: writeGeometryPoint)
   final Point2 start;
+
+  /// 순서 있는 수정 불가 구간 목록이다. 오류의 `segments[i]`는 이 목록의 0 기반 위치다.
   @JsonKey(fromJson: _readPathSegments, toJson: _writePathSegments)
   final List<PathSegment> segments;
 
+  /// start와 segments를 복원해 생성자 조건을 검사한다. 하위 오류는 start 또는 `segments[i]` 경로와 진단을 보존한다.
   factory GeometryPath.fromJson(Object? json) {
     final object = readGeometryObject(json);
     requireGeometryField(object, 'start');
@@ -68,6 +75,8 @@ final class GeometryPath with _$GeometryPath {
     checkGeometryFields(object, const {'start', 'segments'});
     return _$GeometryPathFromJson(object);
   }
+
+  /// 시작점 하나와 순서 있는 구간을 새 JSON으로 내보낸다. 암묵적 닫힘 구간이나 수치 보정은 추가하지 않는다.
   Map<String, Object?> toJson() => _$GeometryPathToJson(this);
 
   /// 시작점과 모든 구간 끝점을 함께 환산하고 원호 bulge는 유지한다.

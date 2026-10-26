@@ -8,6 +8,9 @@ import 'package:r_edit_workflow/src/product/product_input.dart';
 /// 입력 순서를 바꾸지 않으며 오류 순서는 계약이 아니다.
 /// 없는/모호한 참조에서는 영역 대조를 생략하되 입력 중복은 독립 검사한다.
 /// 성공은 현재 참조 정합성만 뜻한다. 과거 ID 불변·배치·제작·저장은 보장하지 않는다.
+/// 적용 ID와 제품 ID는 각각의 소유 목록에서 유일해야 하며 서로 별도 이름 공간이다.
+/// 제품 입력 오류는 `products[i].textInputs[j]`, 누락 정의는 `appliedGeometries[k].geometry.textAreas[j]`를 가리킨다.
+/// 모든 인덱스는 전달 목록의 0 기반 위치다. 하위 issue의 원래 코드·경로·상세도 함께 보존한다.
 List<ProductDesignIssue> validateProductDesignConfiguration({
   required List<AppliedDesignGeometry> appliedGeometries,
   required List<ProductInput> products,

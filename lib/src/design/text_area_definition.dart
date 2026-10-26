@@ -18,6 +18,8 @@ part 'text_area_definition.g.dart';
 )
 @JsonSerializable()
 final class TextAreaDefinition with _$TextAreaDefinition {
+  /// 빈 areaId만 거부한다. label은 빈 값/중복을 허용하며 보정하지 않는다.
+  /// 영역 ID 중복과 실제 원문 연결은 소유 도안 및 입력 대조 API가 검사한다.
   TextAreaDefinition({
     required this.areaId,
     required this.label,
@@ -44,6 +46,8 @@ final class TextAreaDefinition with _$TextAreaDefinition {
   /// 도안 단위를 따르는 배치 허용 영역의 정의다. 원문/줄 입력은 저장하지 않는다.
   @JsonKey(fromJson: _readTextRegion, toJson: _writeTextRegion)
   final TextRegion region;
+
+  /// areaId·label 문자열과 region을 복원한다. 도안 구조/ID 오류와 region의 기하 오류를 구분해 전달한다.
   factory TextAreaDefinition.fromJson(Object? json) {
     final object = readDesignObject(json);
     readDesignString(object, 'areaId');
@@ -52,6 +56,8 @@ final class TextAreaDefinition with _$TextAreaDefinition {
     checkDesignFields(object, const {'areaId', 'label', 'region'});
     return _$TextAreaDefinitionFromJson(object);
   }
+
+  /// 영역의 ID·표시 이름·실제 경계를 새 JSON으로 내보낸다. 원문 입력을 중복 저장하지 않는다.
   Map<String, Object?> toJson() => _$TextAreaDefinitionToJson(this);
 
   /// 영역의 전체 경계만 환산한다. areaId/label은 보존한다.
