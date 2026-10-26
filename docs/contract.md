@@ -130,3 +130,13 @@ validateTextAreaInputs는 정의당 입력 1개를 areaId로 대조해 중복/�
 TextInputErrorCode·TextInputValidationException은 lib/src/text_input_errors.dart에 분리했으며
 lib/r_edit_workflow.dart에서 기존 이름 그대로 export한다. 모델/JSON/오류 조건·경로는 유지한다.
 enum description과 예외 출력의 한국어 원인은 개발자용이며 사용자 화면 문구나 정상 판정이 아니다.
+
+## 진단·예외 경계 (2026-10-27)
+
+[예외·진단·로깅 계약](failure-diagnostics-logging.md)이 오류 상세와 원인/스택 전달의 현행 기준이다.
+업무 값 조건·JSON·공개 코드·필드 위치는 유지한다.
+invalidType의 기대/실제 타입, 미지원 방식/태그의 실제 값/지원 목록은 구조화 필드로 제공한다.
+필수 상세 누락/잘못된 코드·상세 유형/빈 예외 issue 목록은 ArgumentError로 거부한다.
+예외 생성자의 const 사용과 상세 없이 직접 생성하던 소비자 코드는 새 상세 계약에 맞춰야 한다.
+중첩 변환은 원인·진단·최초 스택을 보존하며 Error를 입력 거부로 잡지 않는다.
+이 보장은 배치/제작/저장 가능 판정이나 전체 작업 파일 스키마가 아니다.

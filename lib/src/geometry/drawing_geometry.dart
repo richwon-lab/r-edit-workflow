@@ -66,15 +66,21 @@ final class DrawingGeometry with _$DrawingGeometry {
     for (var i = 0; i < paths.length; i++) {
       try {
         newPaths.add(paths[i].converted(from: from, to: target));
-      } on GeometryValidationException catch (error) {
-        throw error.prefixed('paths[$i]');
+      } on GeometryValidationException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          error.prefixed('paths[$i]', stackTrace: stackTrace),
+          stackTrace,
+        );
       }
     }
     for (var i = 0; i < boundaries.length; i++) {
       try {
         newBoundaries.add(boundaries[i].converted(from: from, to: target));
-      } on GeometryValidationException catch (error) {
-        throw error.prefixed('boundaries[$i]');
+      } on GeometryValidationException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          error.prefixed('boundaries[$i]', stackTrace: stackTrace),
+          stackTrace,
+        );
       }
     }
     return DrawingGeometry(
@@ -88,8 +94,11 @@ final class DrawingGeometry with _$DrawingGeometry {
 DrawingCoordinateSpace _readCoordinateSpace(Object? json) {
   try {
     return DrawingCoordinateSpace.fromJson(json);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed('coordinateSpace');
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('coordinateSpace', stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 
@@ -113,8 +122,11 @@ List<GeometryPath> _readDrawingPaths(Object? json) {
   for (var i = 0; i < json.length; i++) {
     try {
       result.add(GeometryPath.fromJson(json[i]));
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('paths[$i]');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('paths[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
   return result;
@@ -138,8 +150,11 @@ List<ClosedBoundary> _readDrawingBoundaries(Object? json) {
   for (var i = 0; i < json.length; i++) {
     try {
       result.add(ClosedBoundary.fromJson(json[i]));
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('boundaries[$i]');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('boundaries[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
   return result;

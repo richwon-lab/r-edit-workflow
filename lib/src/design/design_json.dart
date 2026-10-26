@@ -83,8 +83,11 @@ List<Object?> readDesignList(Object? json, String fieldPath) {
 ClosedBoundary readBoundary(Object? json, String fieldPath) {
   try {
     return ClosedBoundary.fromJson(json);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed(fieldPath);
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(fieldPath, stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 

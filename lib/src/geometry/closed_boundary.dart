@@ -42,7 +42,10 @@ sealed class ClosedBoundary {
           'kind',
           GeometryDiagnostic(
             operation: 'readClosedBoundary',
-            details: GeometryTagDetails(kind),
+            details: GeometryTagDetails(
+              kind,
+              supportedValues: const ['circle', 'path'],
+            ),
           ),
         );
     }
@@ -114,8 +117,11 @@ final class CircleBoundary extends ClosedBoundary with _$CircleBoundary {
     Point2 convertedCenter;
     try {
       convertedCenter = center.converted(from: from, to: to);
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('center');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('center', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
     return CircleBoundary(
       center: convertedCenter,
@@ -169,8 +175,11 @@ final class PathBoundary extends ClosedBoundary with _$PathBoundary {
       return PathBoundary(
         path: path.converted(from: from, to: to),
       );
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('path');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('path', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
 }
@@ -179,8 +188,11 @@ Point2 _readCircleCenter(Object? json) => readGeometryPoint(json, 'center');
 GeometryPath _readBoundaryPath(Object? json) {
   try {
     return GeometryPath.fromJson(json);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed('path');
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('path', stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 

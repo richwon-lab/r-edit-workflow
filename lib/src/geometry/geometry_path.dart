@@ -26,10 +26,10 @@ final class GeometryPath with _$GeometryPath {
   GeometryPath({required this.start, required List<PathSegment> segments})
     : segments = List.unmodifiable(segments) {
     if (this.segments.isEmpty) {
-      throw const GeometryValidationException(
+      throw GeometryValidationException(
         GeometryErrorCode.emptyPath,
         'segments',
-        GeometryDiagnostic(operation: 'checkPathSegments'),
+        const GeometryDiagnostic(operation: 'checkPathSegments'),
       );
     }
     var segmentStart = start;
@@ -91,8 +91,11 @@ final class GeometryPath with _$GeometryPath {
           LineTo() => LineTo(end: end),
           ArcTo(:final bulge) => ArcTo(end: end, bulge: bulge),
         });
-      } on GeometryValidationException catch (error) {
-        throw error.prefixed('segments[$i].end');
+      } on GeometryValidationException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          error.prefixed('segments[$i].end', stackTrace: stackTrace),
+          stackTrace,
+        );
       }
     }
     try {
@@ -100,16 +103,22 @@ final class GeometryPath with _$GeometryPath {
         start: _convertPathStart(start, from, to),
         segments: converted,
       );
-    } on GeometryValidationException catch (error) {
+    } on GeometryValidationException catch (error, stackTrace) {
       if (error.code != GeometryErrorCode.degenerateSegment) rethrow;
       final cause = error.diagnostic;
-      throw GeometryValidationException(
-        GeometryErrorCode.numericRepresentationFailure,
-        error.fieldPath,
-        GeometryDiagnostic(
-          operation: 'convertSegmentCollapse',
-          details: cause.details,
+      Error.throwWithStackTrace(
+        GeometryValidationException(
+          GeometryErrorCode.numericRepresentationFailure,
+          error.fieldPath,
+          GeometryDiagnostic(
+            operation: 'convertSegmentCollapse',
+            details: cause.details,
+          ),
+          cause: error,
+          causeStackTrace: stackTrace,
+          contextStackTrace: StackTrace.current,
         ),
+        stackTrace,
       );
     }
   }
@@ -118,8 +127,11 @@ final class GeometryPath with _$GeometryPath {
 Point2 _convertPathStart(Point2 start, LengthUnit from, LengthUnit to) {
   try {
     return start.converted(from: from, to: to);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed('start');
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('start', stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 
@@ -142,8 +154,11 @@ List<PathSegment> _readPathSegments(Object? json) {
   for (var i = 0; i < json.length; i++) {
     try {
       result.add(PathSegment.fromJson(json[i]));
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('segments[$i]');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('segments[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
   return result;

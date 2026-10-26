@@ -94,7 +94,36 @@ void main() {
           final exception = GeometryValidationException(
             code,
             'sample',
-            const GeometryDiagnostic(operation: 'test'),
+            GeometryDiagnostic(
+              operation: 'test',
+              details: switch (code) {
+                GeometryErrorCode.invalidType => const GeometryTypeDetails(
+                  expectedType: 'num',
+                  actualType: 'String',
+                ),
+                GeometryErrorCode.unsupportedTag => GeometryTagDetails(
+                  'unsupported',
+                  supportedValues: ['circle'],
+                ),
+                GeometryErrorCode.nonFiniteNumber =>
+                  const GeometryNumberDetails(double.infinity),
+                GeometryErrorCode.nonPositiveRadius =>
+                  const GeometryNumberDetails(0),
+                GeometryErrorCode.zeroArcBulge => const GeometryNumberDetails(
+                  0,
+                ),
+                GeometryErrorCode.degenerateSegment ||
+                GeometryErrorCode.openBoundary => const GeometrySegmentDetails(
+                  startX: 0,
+                  startY: 0,
+                  endX: 0,
+                  endY: 0,
+                ),
+                GeometryErrorCode.numericRepresentationFailure =>
+                  const GeometryNumberDetails(double.infinity),
+                _ => null,
+              },
+            ),
           );
           expect(
             exception.toString(),

@@ -55,24 +55,141 @@ enum TextInputErrorCode {
   };
 }
 
-/// 문구 입력의 구조·값 검증 실패다. 첫 오류를 전달하며 복수 오류 순서는 계약이 아니다.
-///
-/// [fieldPath]는 입력 조각 기준이다. TextAreaInput 객체 자체의 타입 오류는 $이며,
-/// LineBreakInput 단독 복원도 lineBreak 접두 경로를 사용한다. 줄 항목은 lineBreak.lines[0]처럼
-/// 0 기반 목록 인덱스를 쓴다. 문자 오프셋이나 도안 좌표가 아니다.
-/// 상위 제품 복원은 이 예외를 원인 객체로 보존하고 상위 경로를 별도로 제공한다.
-/// 원문을 예외 출력에 덤프하지 않으며 사용자 화면용 메시지 모델도 아니다.
-final class TextInputValidationException implements Exception {
-  /// 호출 경계의 [code]와 상대 [fieldPath]를 보존한다. 입력값을 재검증하지 않는다.
-  const TextInputValidationException(this.code, this.fieldPath);
+/// 문구 오류별 필수 상세의 합이다. 원문/전체 입력을 보관하지 않는다.
+sealed class TextInputDetails {
+  /// 하위 진단의 기반 생성자다.
+  const TextInputDetails();
+}
 
-  /// 누락·타입·지원 제한·원문/지정 줄 불일치를 구분하는 기계 판별 값이다.
-  final TextInputErrorCode code;
+/// invalidType의 기대/실제 타입 이름이다.
+final class TextInputTypeDetails extends TextInputDetails {
+  /// 실제 값 대신 타입 이름만 보존한다.
+  const TextInputTypeDetails({
+    required this.expectedType,
+    required this.actualType,
+  });
 
-  /// 실패한 입력 조각의 필드 또는 지정 줄 위치다. 기준은 타입 설명을 따른다.
-  final String fieldPath;
+  /// JSON/Dart 경계에서 요구한 타입 이름이다.
+  final String expectedType;
 
+  /// null은 Null, 그 밖에는 runtimeType 이름이다.
+  final String actualType;
+  @override
+  String toString() => 'expectedType=$expectedType, actualType=$actualType';
+}
+
+/// 해석할 수 없는 줄바꿈 방식과 지원 범위다.
+final class TextInputModeDetails extends TextInputDetails {
+  /// 보정하지 않은 원래 mode 문자열을 기록한다.
+  const TextInputModeDetails(this.actualValue);
+
+  /// 실제 mode 값이다. 원문 문구와 구분한다.
+  final String actualValue;
+
+  /// 현재 해석 가능한 방식이며 수정 불가다.
+  List<String> get supportedValues => const ['automatic', 'specified'];
+  @override
+  String toString() => 'mode=$actualValue, supported=$supportedValues';
+}
+
+/// CR/LF가 발견된 위치다. 원문 자체는 보관하지 않는다.
+final class TextInputCharacterDetails extends TextInputDetails {
+  /// 해당 문자열의 UTF-16 코드 단위 위치와 CR(13)/LF(10)를 기록한다.
+  const TextInputCharacterDetails({
+    required this.codeUnitIndex,
+    required this.codeUnit,
+  });
+
+  /// 필드 문자열 안의 0 기반 UTF-16 위치다. 글자/문자소 오프셋 API는 아니다.
+  final int codeUnitIndex;
+
+  /// 발견한 CR 또는 LF의 코드 단위다.
+  final int codeUnit;
+  @override
+  String toString() => 'codeUnitIndex=$codeUnitIndex, codeUnit=$codeUnit';
+}
+
+/// 원문과 지정 줄 연결이 다를 때의 최소 수량 정보다.
+final class TextInputMismatchDetails extends TextInputDetails {
+  /// 원문/연결의 UTF-16 길이와 지정 줄 수만 보존한다.
+  const TextInputMismatchDetails({
+    required this.sourceLength,
+    required this.specifiedLength,
+    required this.lineCount,
+  });
+
+  /// 원문의 UTF-16 코드 단위 길이다.
+  final int sourceLength;
+
+  /// 지정 줄을 순서대로 연결한 코드 단위 길이다.
+  final int specifiedLength;
+
+  /// 지정 줄 목록의 항목 수다.
+  final int lineCount;
   @override
   String toString() =>
-      'TextInputValidationException(code=${code.name}, fieldPath=$fieldPath, 설명=${code.description})';
+      'sourceLength=$sourceLength, specifiedLength=$specifiedLength, lineCount=$lineCount';
+}
+
+/// 입력 거부의 코드·상대 경로·형식 있는 상세다. UI 메시지/로그가 아니다.
+///
+/// TextAreaInput의 루트 타입 오류는 $, LineBreakInput은 lineBreak 접두를 쓴다.
+/// 항목 위치는 0 기반이며 원문 전체는 보관하지 않는다.
+/// 잘못된 코드/상세 조합은 호출 코드 결함인 ArgumentError로 거부한다.
+final class TextInputValidationException implements Exception {
+  /// 코드별 상세를 런타임 검사한다. assert 비활성 환경도 같다.
+  TextInputValidationException(
+    this.code,
+    this.fieldPath, {
+    this.details,
+    this.cause,
+    this.causeStackTrace,
+    this.contextStackTrace,
+  }) {
+    final details = this.details;
+    final valid = switch (code) {
+      TextInputErrorCode.invalidType =>
+        details is TextInputTypeDetails &&
+            details.expectedType.isNotEmpty &&
+            details.actualType.isNotEmpty,
+      TextInputErrorCode.unknownLineBreakMode =>
+        details is TextInputModeDetails &&
+            !details.supportedValues.contains(details.actualValue),
+      TextInputErrorCode.sourceContainsCrLf ||
+      TextInputErrorCode.specifiedLineContainsCrLf =>
+        details is TextInputCharacterDetails &&
+            details.codeUnitIndex >= 0 &&
+            (details.codeUnit == 10 || details.codeUnit == 13),
+      TextInputErrorCode.specifiedLinesMismatchSourceText =>
+        details is TextInputMismatchDetails &&
+            details.sourceLength >= 0 &&
+            details.specifiedLength >= 0 &&
+            details.lineCount > 0,
+      _ => details == null,
+    };
+    if (!valid || fieldPath.isEmpty) {
+      throw ArgumentError('문구 오류 코드/상세/경로 조합이 잘못되었습니다.');
+    }
+  }
+
+  /// 소비자가 기계적으로 판별하는 입력 거부 종류다.
+  final TextInputErrorCode code;
+
+  /// 입력 조각 기준 상대 필드/항목 위치다.
+  final String fieldPath;
+
+  /// 코드가 요구하는 작은 상세이며 원문/JSON은 담지 않는다.
+  final TextInputDetails? details;
+
+  /// 문맥 추가 전 원래 예외다.
+  final Exception? cause;
+
+  /// 원래 실패 위치의 스택이다.
+  final StackTrace? causeStackTrace;
+
+  /// 문맥을 추가한 코드 경계의 스택이다.
+  final StackTrace? contextStackTrace;
+  @override
+  String toString() =>
+      'TextInputValidationException(code=${code.name}, fieldPath=$fieldPath, 설명=${code.description}, details=$details)';
 }

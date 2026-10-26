@@ -152,3 +152,11 @@ CI에서는 생성 소스의 Git 포함 상태도 검사하며 로컬 기본 실
 문구 오류 구현은 lib/src/text_input_errors.dart이며 공개 import 이름·JSON·검증 조건은 유지한다.
 기본 한국어 원인 설명은 개발자 진단용이다. public_member_api_docs를 활성화했고
 현재 분석 No issues found, 전체 431개 테스트·AOT 5개·독립 소비자 검증이 통과했다.
+
+## 구조화 실패 처리
+
+[예외·진단·로깅 계약](docs/failure-diagnostics-logging.md)에 필수 상세·소비자 예제·스택 보존과 실제 검증을 기록했다.
+invalidType은 기대/실제 타입, 미지원 값은 실제 값/지원 목록을 제공한다.
+예외/issue 생성자는 코드별 상세를 런타임 검사하므로 const가 아니다. 기존 상세 없는 직접 생성은 변경이 필요하다.
+JSON·원문·기하·값 검증 조건은 유지한다. Error를 입력 issue나 정상 결과로 바꾸지 않는다.
+이 패키지는 root 로거/Flutter/파일 출력을 소유하지 않으며 앱의 로깅 의존성도 전파하지 않는다.

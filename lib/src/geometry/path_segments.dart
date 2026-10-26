@@ -37,7 +37,10 @@ sealed class PathSegment {
           'kind',
           GeometryDiagnostic(
             operation: 'readPathSegment',
-            details: GeometryTagDetails(tag),
+            details: GeometryTagDetails(
+              tag,
+              supportedValues: const ['line', 'arc'],
+            ),
           ),
         );
     }

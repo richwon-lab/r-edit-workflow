@@ -158,11 +158,36 @@ final class ProductDesignTypeDetails extends ProductDesignIssueDetails {
 /// 제품 값 또는 참조 구성의 한 오류다. 순서로 종류를 판별하지 않는다.
 final class ProductDesignIssue {
   /// 독립 오류 하나의 코드·소유 경로·상세를 보존한다. 생성 자체가 참조 검사 실행은 아니다.
-  const ProductDesignIssue({
+  ProductDesignIssue({
     required this.code,
     required this.fieldPath,
     this.details,
-  });
+  }) {
+    final details = this.details;
+    final valid = switch (code) {
+      ProductDesignErrorCode.invalidType =>
+        details is ProductDesignTypeDetails &&
+            details.expectedType.isNotEmpty &&
+            details.actualType.isNotEmpty,
+      ProductDesignErrorCode.emptyProductId ||
+      ProductDesignErrorCode.emptyAppliedGeometryId ||
+      ProductDesignErrorCode.emptySourceDesignId ||
+      ProductDesignErrorCode.emptySourceRevision =>
+        details is ProductDesignIdentifierDetails,
+      ProductDesignErrorCode.duplicateAppliedGeometryId ||
+      ProductDesignErrorCode.duplicateProductId =>
+        details is ProductDesignDuplicateDetails,
+      ProductDesignErrorCode.unknownAppliedGeometryId ||
+      ProductDesignErrorCode.ambiguousAppliedGeometryId =>
+        details is ProductDesignReferenceDetails,
+      ProductDesignErrorCode.textAreaInputMismatch =>
+        details is ProductDesignAreaDetails,
+      _ => details == null,
+    };
+    if (!valid || fieldPath.isEmpty) {
+      throw ArgumentError('제품 오류 코드/상세/경로 조합이 잘못되었습니다.');
+    }
+  }
 
   /// 값 구조/ID/참조/하위 영역 대응 중 실패 종류를 기계적으로 구분한다.
   final ProductDesignErrorCode code;
@@ -188,17 +213,37 @@ final class ProductDesignIssue {
 /// 값 실패는 한 issue, 구성 실패는 독립 issue 전체를 전달한다.
 final class ProductDesignValidationException implements Exception {
   /// issue 목록을 방어 복사한다. 단독 값 오류와 구성의 독립 복수 오류를 같은 목록 형식으로 전달한다.
-  ProductDesignValidationException(List<ProductDesignIssue> issues)
-    : issues = List.unmodifiable(issues);
+  ProductDesignValidationException(
+    List<ProductDesignIssue> issues, {
+    this.cause,
+    this.causeStackTrace,
+    this.contextStackTrace,
+  }) : issues = List.unmodifiable(issues) {
+    if (issues.isEmpty) throw ArgumentError('제품 검증 예외에는 issue가 하나 이상 필요합니다.');
+  }
 
   /// 수정 불가 진단 목록이며 순서는 계약이 아니다.
   final List<ProductDesignIssue> issues;
 
+  /// 최초 실패 객체다.
+  final Exception? cause;
+
+  /// 최초 실패 위치의 스택이다.
+  final StackTrace? causeStackTrace;
+
+  /// 문맥 추가 경계의 스택이다.
+  final StackTrace? contextStackTrace;
+
   /// 각 issue의 부모 경로만 추가한다. 원래 코드·상세 객체와 순서를 보존하며 새 업무 검사는 하지 않는다.
-  ProductDesignValidationException prefixed(String prefix) =>
-      ProductDesignValidationException([
-        for (final issue in issues) issue.prefixed(prefix),
-      ]);
+  ProductDesignValidationException prefixed(
+    String prefix, {
+    StackTrace? stackTrace,
+  }) => ProductDesignValidationException(
+    [for (final issue in issues) issue.prefixed(prefix)],
+    cause: cause ?? this,
+    causeStackTrace: causeStackTrace ?? stackTrace,
+    contextStackTrace: StackTrace.current,
+  );
   @override
   String toString() =>
       'ProductDesignValidationException:\n${issues.join('\n')}';
@@ -208,10 +253,11 @@ final class ProductDesignValidationException implements Exception {
 /// cause의 기하 diagnostic·문구 code/fieldPath를 문자열 분석 없이 확인할 수 있다.
 final class ProductDesignNestedException implements Exception {
   /// 상위 복원 경로와 원래 하위 예외를 함께 보관한다. cause를 문자열이나 다른 오류 타입으로 변환하지 않는다.
-  const ProductDesignNestedException({
+  ProductDesignNestedException({
     required this.fieldPath,
     required this.cause,
-  });
+    required this.causeStackTrace,
+  }) : contextStackTrace = StackTrace.current;
 
   /// 중첩 복원/참조 검사 경계 기준 필드 경로다. 목록 위치는 0 기반이며 문자 오프셋이 아니다.
   final String fieldPath;
@@ -219,12 +265,21 @@ final class ProductDesignNestedException implements Exception {
   /// 원래 Geometry/Design/TextInput 예외 객체다. 타입과 진단을 보존한다.
   final Exception cause;
 
+  /// 원인 예외의 최초 실패 스택이다.
+  final StackTrace causeStackTrace;
+
+  /// 문맥 추가 경계의 스택이다.
+  final StackTrace contextStackTrace;
+
   /// 상위 소유 위치를 연결하고 cause 객체를 그대로 유지한다. 원래 원인의 상대 fieldPath는 cause에서 조회한다.
-  ProductDesignNestedException prefixed(String prefix) =>
-      ProductDesignNestedException(
-        fieldPath: '$prefix.$fieldPath',
-        cause: cause,
-      );
+  ProductDesignNestedException prefixed(
+    String prefix, {
+    StackTrace? stackTrace,
+  }) => ProductDesignNestedException(
+    fieldPath: '$prefix.$fieldPath',
+    cause: cause,
+    causeStackTrace: causeStackTrace,
+  );
   @override
   String toString() =>
       'ProductDesignNestedException(fieldPath=$fieldPath, 설명=제품 구성의 중첩 값 복원에 실패했습니다., cause=$cause)';

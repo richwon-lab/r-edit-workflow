@@ -1,6 +1,6 @@
 # 라이브러리 개발 계약 감사
 
-현재 확인일: 2026-10-26. 공개 진입점·실제 구현·테스트를 대조했다.
+현재 확인일: 2026-10-27. 공개 진입점·실제 구현·테스트를 대조했다.
 이 문서는 현재 보장과 미구현 범위를 구분한다. 과거 141건은 아래 접힌 초기 목록에 보존한다.
 
 ## 공개 설명 감사 결과
@@ -42,20 +42,20 @@ test/geometry/arc_representation_test.dart의 위치 인자 ignore는 회전/역
 | 생성·소비자 | 시작 상태/첫 생성 일치·반복 안정성, 생성기 없는 소비자                    | 원격 Git fetch/호스팅 배포                       |
 
 문서 lint 누락은 현재 0건이다. 이것이 업무 기능·배치·저장·제작 계약의 완성을 뜻하지 않는다.
-위 미구현 책임은 이번 작업에 섞지 않았으며 새 공개 계약 제안도 추가하지 않았다.
+위 미구현 업무 책임은 추가하지 않았다. 오류 상세/스택의 공개 API 변경은 아래 현행 계약을 따른다.
 
 ## 문구 오류 파일과 개발자 진단
 
 TextInputErrorCode와 TextInputValidationException을 lib/src/text_input_errors.dart에 분리했다.
 모델은 기존 lib/src/text_area_input.dart에 둔다. 소비자는 여전히 공개 진입점에서 같은 이름을 import한다.
-기존 코드/fieldPath/생성자 인자와 JSON·값 검증 순서는 유지한다.
-추가 진단 타입 없이 enum의 description과 예외 출력에 한국어 원인 설명을 제공한다.
+기존 코드/fieldPath와 JSON·값 검증 조건은 유지한다. 예외 생성자의 필수 상세/런타임 조합 검사는 2026-10-27에 보완했다.
+TextInputDetails의 타입·방식·문자 위치·길이 상세와 description을 제공한다. 원문은 보관하지 않는다.
 입력 원문을 덤프하거나 임의 Map 상세를 만들지 않았다.
 
 예를 들어 areaId의 JSON 값이 숫자라면 다음처럼 출력한다.
 
 ~~~text
-TextInputValidationException(code=invalidType, fieldPath=areaId, 설명=문구 입력의 JSON 값 타입이 기대 타입과 다릅니다.)
+TextInputValidationException(code=invalidType, fieldPath=areaId, 설명=문구 입력의 JSON 값 타입이 기대 타입과 다릅니다., details=expectedType=String, actualType=int)
 ~~~
 
 TextAreaInput 객체 자체의 타입 오류 경로는 $다. LineBreakInput 단독 복원도 lineBreak 접두 경로를 사용한다.
@@ -240,3 +240,19 @@ Dartdoc HTML 렌더링은 실행하지 않았으며 API 설명과 lint/분석 �
 | lib/src/text_area_input.dart:175                     | `Map<String, Object?> toJson() => _$TextAreaInputToJson(this);`                  |
 
 </details>
+
+
+## 구조화 진단·원인·스택 재점검 (2026-10-27)
+
+[예외·진단·로깅 계약](failure-diagnostics-logging.md)에 타입별 필수 상세와 소비자 예제를 기록했다.
+invalidType은 네 오류 계열 모두 기대/실제 타입이 필수다. 미지원 태그/방식은 실제 값과 지원 목록을 제공한다.
+코드별 상세 유형이 다르거나 필수 상세/경로가 없으면 ArgumentError다. 제품 예외의 빈 issue 목록도 거부한다.
+중첩 변환은 cause/causeStackTrace/contextStackTrace와 Error.throwWithStackTrace를 사용한다.
+같은 예외는 rethrow하며 Error를 입력 실패로 잡지 않는다. 정상 값·JSON·기하 알고리즘은 바꾸지 않았다.
+예외/issue 생성자는 const가 아니며 새 TextInputDetails와 GeometryTagDetails.supportedValues를 공개한다.
+이 변화가 JSON 저장 스키마·업무 값 이름 변경이나 호환 별칭을 뜻하지 않는다.
+패키지에는 로거/파일/Flutter 의존성이 없다. 앱 출력/전역 오류 핸들러는 앱 소유다.
+
+최종 실제 검사: 전체 verify에서 생성 일치/반복 안정성·analyze(No issues)·447개 테스트·AOT 6개·생성기 없는 소비자 성공.
+문구 진단 10개/제품 진단 8개는 파일별 단독 실행도 성공했다. 공개 설명 lint를 유지했고 새 누락은 없다.
+원격 CI·앱 로그의 다른 OS 동작·업무 I/O/배치/저장 검증은 이 라이브러리 성공에 포함하지 않는다.

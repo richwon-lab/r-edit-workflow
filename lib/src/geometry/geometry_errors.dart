@@ -91,12 +91,16 @@ final class GeometryNumberDetails extends GeometryDiagnosticDetails {
 /// 해석하지 못한 기하 종류/단위 태그다.
 final class GeometryTagDetails extends GeometryDiagnosticDetails {
   /// 해석하지 못한 단위/종류 문자열을 보정 없이 기록한다. 지원 태그를 새로 정의하지 않는다.
-  const GeometryTagDetails(this.tag);
+  GeometryTagDetails(this.tag, {required List<String> supportedValues})
+    : supportedValues = List.unmodifiable(supportedValues);
 
   /// 보정하지 않은 원래 문자열이며 수치 단위가 아니다.
   final String tag;
+
+  /// 현재 경계에서 지원하는 태그 목록이다.
+  final List<String> supportedValues;
   @override
-  String toString() => 'tag=$tag';
+  String toString() => 'tag=$tag, supported=$supportedValues';
 }
 
 /// 도안 문맥 단위의 구간 양끝점이다. 원 중심을 이 필드로 표현하지 않는다.
@@ -227,7 +231,50 @@ final class GeometryDiagnostic {
 /// [fieldPath]는 모델/JSON 필드 위치다. [diagnostic]은 중첩 시 원형을 보존한다.
 final class GeometryValidationException implements Exception {
   /// 기하 오류 코드·모델 상대 경로·진단 객체를 보존한다. 생성 자체가 형상 검사를 다시 수행하지 않는다.
-  const GeometryValidationException(this.code, this.fieldPath, this.diagnostic);
+  GeometryValidationException(
+    this.code,
+    this.fieldPath,
+    this.diagnostic, {
+    this.cause,
+    this.causeStackTrace,
+    this.contextStackTrace,
+  }) {
+    final details = diagnostic.details;
+    final valid = switch (code) {
+      GeometryErrorCode.invalidType =>
+        details is GeometryTypeDetails &&
+            details.expectedType.isNotEmpty &&
+            details.actualType.isNotEmpty,
+      GeometryErrorCode.unsupportedTag =>
+        details is GeometryTagDetails &&
+            details.supportedValues.isNotEmpty &&
+            !details.supportedValues.contains(details.tag),
+      GeometryErrorCode.nonFiniteNumber ||
+      GeometryErrorCode.nonPositiveRadius ||
+      GeometryErrorCode.zeroArcBulge => details is GeometryNumberDetails,
+      GeometryErrorCode.degenerateSegment ||
+      GeometryErrorCode.openBoundary => details is GeometrySegmentDetails,
+      GeometryErrorCode.numericRepresentationFailure =>
+        details is GeometryNumberDetails ||
+            details is GeometryArcCalculationDetails ||
+            details is GeometryArcExtremumDetails ||
+            details is GeometryCircleExtremumDetails ||
+            details is GeometrySegmentDetails,
+      _ => details == null,
+    };
+    if (!valid || fieldPath.isEmpty || diagnostic.operation.isEmpty) {
+      throw ArgumentError('기하 오류 코드/진단/경로 조합이 잘못되었습니다.');
+    }
+  }
+
+  /// 원래 실패 객체다. 접두 추가 시 최초 원인을 유지한다.
+  final Exception? cause;
+
+  /// 최초 실패 위치의 스택이다.
+  final StackTrace? causeStackTrace;
+
+  /// 마지막 문맥 추가 경계의 스택이다.
+  final StackTrace? contextStackTrace;
 
   /// 기계적으로 판별하는 실패 코드다.
   final GeometryErrorCode code;
@@ -239,12 +286,17 @@ final class GeometryValidationException implements Exception {
   final GeometryDiagnostic diagnostic;
 
   /// 코드와 상세 객체를 그대로 두고 부모 필드 위치만 연결한다.
-  GeometryValidationException prefixed(String prefix) =>
-      GeometryValidationException(
-        code,
-        fieldPath == r'$' ? prefix : '$prefix.$fieldPath',
-        diagnostic,
-      );
+  GeometryValidationException prefixed(
+    String prefix, {
+    StackTrace? stackTrace,
+  }) => GeometryValidationException(
+    code,
+    fieldPath == r'$' ? prefix : '$prefix.$fieldPath',
+    diagnostic,
+    cause: cause ?? this,
+    causeStackTrace: causeStackTrace ?? stackTrace,
+    contextStackTrace: StackTrace.current,
+  );
   @override
   String toString() =>
       'GeometryValidationException(code=${code.name}, fieldPath=$fieldPath, 설명=${code.description}, $diagnostic)';

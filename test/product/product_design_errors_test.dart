@@ -124,10 +124,10 @@ void main() {
       }
     });
     test('예외에 전달한 issue 목록을 나중에 변경해도 진단이 유지된다', () {
-      const issue = ProductDesignIssue(
+      final issue = ProductDesignIssue(
         code: ProductDesignErrorCode.emptyProductId,
         fieldPath: 'productId',
-        details: ProductDesignIdentifierDetails(''),
+        details: const ProductDesignIdentifierDetails(''),
       );
       final list = [issue];
       final error = ProductDesignValidationException(list);

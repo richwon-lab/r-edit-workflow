@@ -21,9 +21,13 @@ sealed class LineBreakInput {
       case 'specified':
         final value = _required(object, 'lines', 'lineBreak.lines');
         if (value is! List) {
-          throw const TextInputValidationException(
+          throw TextInputValidationException(
             TextInputErrorCode.invalidType,
             'lineBreak.lines',
+            details: TextInputTypeDetails(
+              expectedType: 'List',
+              actualType: value.runtimeType.toString(),
+            ),
           );
         }
         for (var i = 0; i < value.length; i++) {
@@ -31,15 +35,20 @@ sealed class LineBreakInput {
             throw TextInputValidationException(
               TextInputErrorCode.invalidType,
               'lineBreak.lines[$i]',
+              details: TextInputTypeDetails(
+                expectedType: 'String',
+                actualType: value[i].runtimeType.toString(),
+              ),
             );
           }
         }
         _checkFields(object, const {'mode', 'lines'}, 'lineBreak');
         return _$SpecifiedLineBreakFromJson(object);
       default:
-        throw const TextInputValidationException(
+        throw TextInputValidationException(
           TextInputErrorCode.unknownLineBreakMode,
           'lineBreak.mode',
+          details: TextInputModeDetails(mode),
         );
     }
   }
@@ -78,7 +87,7 @@ final class SpecifiedLineBreak extends LineBreakInput
   /// 원문과의 일치는 원문을 함께 가진 TextAreaInput에서 검사한다.
   SpecifiedLineBreak(List<String> lines) : lines = List.unmodifiable(lines) {
     if (this.lines.isEmpty) {
-      throw const TextInputValidationException(
+      throw TextInputValidationException(
         TextInputErrorCode.emptySpecifiedLines,
         'lineBreak.lines',
       );
@@ -94,6 +103,7 @@ final class SpecifiedLineBreak extends LineBreakInput
         throw TextInputValidationException(
           TextInputErrorCode.specifiedLineContainsCrLf,
           'lineBreak.lines[$i]',
+          details: _crLfDetails(this.lines[i]),
         );
       }
     }
@@ -133,9 +143,14 @@ final class TextAreaInput with _$TextAreaInput {
     _validateSourceText(sourceText);
     if (lineBreak case SpecifiedLineBreak(:final lines)
         when lines.join() != sourceText) {
-      throw const TextInputValidationException(
+      throw TextInputValidationException(
         TextInputErrorCode.specifiedLinesMismatchSourceText,
         'lineBreak.lines',
+        details: TextInputMismatchDetails(
+          sourceLength: sourceText.length,
+          specifiedLength: lines.join().length,
+          lineCount: lines.length,
+        ),
       );
     }
   }
@@ -179,7 +194,7 @@ bool _containsCrLf(String text) => text.contains('\r') || text.contains('\n');
 
 void _validateAreaId(String areaId) {
   if (areaId.isEmpty) {
-    throw const TextInputValidationException(
+    throw TextInputValidationException(
       TextInputErrorCode.emptyAreaId,
       'areaId',
     );
@@ -188,15 +203,16 @@ void _validateAreaId(String areaId) {
 
 void _validateSourceText(String sourceText) {
   if (sourceText.isEmpty) {
-    throw const TextInputValidationException(
+    throw TextInputValidationException(
       TextInputErrorCode.emptySourceText,
       'sourceText',
     );
   }
   if (_containsCrLf(sourceText)) {
-    throw const TextInputValidationException(
+    throw TextInputValidationException(
       TextInputErrorCode.sourceContainsCrLf,
       'sourceText',
+      details: _crLfDetails(sourceText),
     );
   }
 }
@@ -206,6 +222,10 @@ Map<String, Object?> _object(Object? value, String fieldPath) {
     throw TextInputValidationException(
       TextInputErrorCode.invalidType,
       fieldPath,
+      details: TextInputTypeDetails(
+        expectedType: 'object',
+        actualType: value.runtimeType.toString(),
+      ),
     );
   }
   return value;
@@ -227,6 +247,10 @@ String _stringField(Map<String, Object?> object, String key, String fieldPath) {
     throw TextInputValidationException(
       TextInputErrorCode.invalidType,
       fieldPath,
+      details: TextInputTypeDetails(
+        expectedType: 'String',
+        actualType: value.runtimeType.toString(),
+      ),
     );
   }
   return value;
@@ -245,4 +269,13 @@ void _checkFields(
       );
     }
   }
+}
+
+TextInputCharacterDetails _crLfDetails(String value) {
+  final index = value.indexOf(RegExp(r'[\r\n]'));
+  if (index < 0) throw StateError('CR/LF 진단의 호출 조건이 다릅니다.');
+  return TextInputCharacterDetails(
+    codeUnitIndex: index,
+    codeUnit: value.codeUnitAt(index),
+  );
 }

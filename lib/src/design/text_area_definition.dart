@@ -71,8 +71,11 @@ final class TextAreaDefinition with _$TextAreaDefinition {
         label: label,
         region: region.converted(from: from, to: to),
       );
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('region');
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('region', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
 }
@@ -80,10 +83,16 @@ final class TextAreaDefinition with _$TextAreaDefinition {
 TextRegion _readTextRegion(Object? json) {
   try {
     return TextRegion.fromJson(json);
-  } on DesignValidationException catch (error) {
-    throw error.prefixed('region');
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed('region');
+  } on DesignValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('region', stackTrace: stackTrace),
+      stackTrace,
+    );
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('region', stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 

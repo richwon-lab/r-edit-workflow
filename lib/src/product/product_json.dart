@@ -96,24 +96,42 @@ List<Object?> readProductList(Object? value, String path) {
 T readProductChild<T>(Object? json, T Function(Object?) parse, String path) {
   try {
     return parse(json);
-  } on ProductDesignValidationException catch (error) {
-    throw error.prefixed(path);
-  } on ProductDesignNestedException catch (error) {
-    throw error.prefixed(path);
-  } on GeometryValidationException catch (error) {
-    throw ProductDesignNestedException(
-      fieldPath: _nestedPath(path, error.fieldPath),
-      cause: error,
+  } on ProductDesignValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(path, stackTrace: stackTrace),
+      stackTrace,
     );
-  } on DesignValidationException catch (error) {
-    throw ProductDesignNestedException(
-      fieldPath: _nestedPath(path, error.fieldPath),
-      cause: error,
+  } on ProductDesignNestedException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(path, stackTrace: stackTrace),
+      stackTrace,
     );
-  } on TextInputValidationException catch (error) {
-    throw ProductDesignNestedException(
-      fieldPath: _nestedPath(path, error.fieldPath),
-      cause: error,
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProductDesignNestedException(
+        fieldPath: _nestedPath(path, error.fieldPath),
+        cause: error,
+        causeStackTrace: stackTrace,
+      ),
+      stackTrace,
+    );
+  } on DesignValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProductDesignNestedException(
+        fieldPath: _nestedPath(path, error.fieldPath),
+        cause: error,
+        causeStackTrace: stackTrace,
+      ),
+      stackTrace,
+    );
+  } on TextInputValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      ProductDesignNestedException(
+        fieldPath: _nestedPath(path, error.fieldPath),
+        cause: error,
+        causeStackTrace: stackTrace,
+      ),
+      stackTrace,
     );
   }
 }

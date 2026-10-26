@@ -41,7 +41,10 @@ final class DrawingCoordinateSpace with _$DrawingCoordinateSpace {
         'lengthUnit',
         GeometryDiagnostic(
           operation: 'readLengthUnit',
-          details: GeometryTagDetails(tag),
+          details: GeometryTagDetails(
+            tag,
+            supportedValues: const ['millimeter', 'inch'],
+          ),
         ),
       );
     }

@@ -53,8 +53,11 @@ final class Point2 with _$Point2 {
 Point2 readGeometryPoint(Object? json, String fieldPath) {
   try {
     return Point2.fromJson(json);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed(fieldPath);
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(fieldPath, stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 

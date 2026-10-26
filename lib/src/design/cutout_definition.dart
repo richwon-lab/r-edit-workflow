@@ -72,7 +72,10 @@ ClosedBoundary _convertBoundary(
 ) {
   try {
     return boundary.converted(from: from, to: to);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed(fieldPath);
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(fieldPath, stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }

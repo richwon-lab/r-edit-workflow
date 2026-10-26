@@ -61,4 +61,11 @@ export 'src/text_area_input.dart'
     show AutomaticLineBreak, LineBreakInput, SpecifiedLineBreak, TextAreaInput;
 
 export 'src/text_input_errors.dart'
-    show TextInputErrorCode, TextInputValidationException;
+    show
+        TextInputCharacterDetails,
+        TextInputDetails,
+        TextInputErrorCode,
+        TextInputMismatchDetails,
+        TextInputModeDetails,
+        TextInputTypeDetails,
+        TextInputValidationException;

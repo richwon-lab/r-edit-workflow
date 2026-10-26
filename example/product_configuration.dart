@@ -44,5 +44,27 @@ void main() {
   if (restored != configuration) {
     throw StateError('소비자 JSON 왕복 불일치');
   }
-  stdout.writeln('제품 참조와 지정 한 줄 보존 확인');
+  // 소비자는 오류 문자열 대신 공개 타입/필드를 처리한다. 입력 거부를 로깅하지 않는다.
+  try {
+    TextAreaInput.fromJson({
+      'areaId': 'title',
+      'sourceText': 123,
+      'lineBreak': {'mode': 'automatic'},
+    });
+    throw StateError('잘못된 타입 허용');
+  } on TextInputValidationException catch (error) {
+    if (error.details case TextInputTypeDetails(
+      :final expectedType,
+      :final actualType,
+    )) {
+      if (expectedType != 'String' ||
+          actualType != 'int' ||
+          error.fieldPath != 'sourceText') {
+        throw StateError('공개 타입 진단 불일치');
+      }
+    } else {
+      throw StateError('필수 타입 상세 누락');
+    }
+  }
+  stdout.writeln('제품 참조·지정 한 줄·구조화 타입 진단 확인');
 }

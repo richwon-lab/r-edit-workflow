@@ -125,15 +125,21 @@ final class DesignGeometry with _$DesignGeometry {
     for (var i = 0; i < cutouts.length; i++) {
       try {
         convertedCutouts.add(cutouts[i].converted(from: from, to: target));
-      } on GeometryValidationException catch (error) {
-        throw error.prefixed('cutouts[$i]');
+      } on GeometryValidationException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          error.prefixed('cutouts[$i]', stackTrace: stackTrace),
+          stackTrace,
+        );
       }
     }
     for (var i = 0; i < textAreas.length; i++) {
       try {
         convertedAreas.add(textAreas[i].converted(from: from, to: target));
-      } on GeometryValidationException catch (error) {
-        throw error.prefixed('textAreas[$i]');
+      } on GeometryValidationException catch (error, stackTrace) {
+        Error.throwWithStackTrace(
+          error.prefixed('textAreas[$i]', stackTrace: stackTrace),
+          stackTrace,
+        );
       }
     }
     return DesignGeometry(
@@ -150,8 +156,11 @@ ClosedBoundary _readOutline(Object? json) => readBoundary(json, 'outline');
 DrawingCoordinateSpace _readDesignSpace(Object? json) {
   try {
     return DrawingCoordinateSpace.fromJson(json);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed('coordinateSpace');
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed('coordinateSpace', stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }
 
@@ -164,10 +173,16 @@ List<CutoutDefinition> _readCutouts(Object? json) {
   for (var i = 0; i < values.length; i++) {
     try {
       result.add(CutoutDefinition.fromJson(values[i]));
-    } on DesignValidationException catch (error) {
-      throw error.prefixed('cutouts[$i]');
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('cutouts[$i]');
+    } on DesignValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('cutouts[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('cutouts[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
   return result;
@@ -179,10 +194,16 @@ List<TextAreaDefinition> _readTextAreas(Object? json) {
   for (var i = 0; i < values.length; i++) {
     try {
       result.add(TextAreaDefinition.fromJson(values[i]));
-    } on DesignValidationException catch (error) {
-      throw error.prefixed('textAreas[$i]');
-    } on GeometryValidationException catch (error) {
-      throw error.prefixed('textAreas[$i]');
+    } on DesignValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('textAreas[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
+    } on GeometryValidationException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        error.prefixed('textAreas[$i]', stackTrace: stackTrace),
+        stackTrace,
+      );
     }
   }
   return result;
@@ -204,7 +225,10 @@ ClosedBoundary _convertBoundary(
 ) {
   try {
     return boundary.converted(from: from, to: to);
-  } on GeometryValidationException catch (error) {
-    throw error.prefixed(fieldPath);
+  } on GeometryValidationException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      error.prefixed(fieldPath, stackTrace: stackTrace),
+      stackTrace,
+    );
   }
 }

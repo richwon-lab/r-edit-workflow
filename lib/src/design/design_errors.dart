@@ -104,11 +104,30 @@ final class DesignTypeDetails extends DesignIssueDetails {
 /// 정의 구성 또는 입력 연결의 실패다. 성공/배치 완료 상태를 저장하지 않는다.
 final class DesignValidationIssue {
   /// 한 진단의 코드·상대 경로·상세를 묶는다. 오류 조건을 다시 실행하거나 정상 판정을 생성하지 않는다.
-  const DesignValidationIssue({
+  DesignValidationIssue({
     required this.code,
     required this.fieldPath,
     this.details,
-  });
+  }) {
+    final details = this.details;
+    final valid = switch (code) {
+      DesignErrorCode.invalidType =>
+        details is DesignTypeDetails &&
+            details.expectedType.isNotEmpty &&
+            details.actualType.isNotEmpty,
+      DesignErrorCode.emptyCutoutId ||
+      DesignErrorCode.emptyAreaId ||
+      DesignErrorCode.unknownInputAreaId ||
+      DesignErrorCode.missingAreaInput => details is DesignIdentifierDetails,
+      DesignErrorCode.duplicateCutoutId ||
+      DesignErrorCode.duplicateAreaId ||
+      DesignErrorCode.duplicateInputAreaId => details is DesignDuplicateDetails,
+      _ => details == null,
+    };
+    if (!valid || fieldPath.isEmpty) {
+      throw ArgumentError('도안 오류 코드/상세/경로 조합이 잘못되었습니다.');
+    }
+  }
 
   /// 정의 오류와 입력 참조 오류를 구분하는 코드다.
   final DesignErrorCode code;
@@ -133,7 +152,21 @@ final class DesignValidationIssue {
 /// 도안 값 구성의 검증 실패를 전달한다. 연결 API는 별도로 issue 목록을 반환한다.
 final class DesignValidationException implements Exception {
   /// 단독 도안 값 생성/복원의 첫 실패를 보존한다. 입력 대조의 복수 issue 반환과 구분한다.
-  const DesignValidationException(this.issue);
+  DesignValidationException(
+    this.issue, {
+    this.cause,
+    this.causeStackTrace,
+    this.contextStackTrace,
+  });
+
+  /// 원래 실패 객체다.
+  final Exception? cause;
+
+  /// 최초 실패 위치의 스택이다.
+  final StackTrace? causeStackTrace;
+
+  /// 문맥 추가 경계의 스택이다.
+  final StackTrace? contextStackTrace;
 
   /// 원인 코드·필드 경로·명시적 상세다.
   final DesignValidationIssue issue;
@@ -145,8 +178,13 @@ final class DesignValidationException implements Exception {
   String get fieldPath => issue.fieldPath;
 
   /// 기존 원인 정보를 보존하고 부모 위치를 연결한다.
-  DesignValidationException prefixed(String prefix) =>
-      DesignValidationException(issue.prefixed(prefix));
+  DesignValidationException prefixed(String prefix, {StackTrace? stackTrace}) =>
+      DesignValidationException(
+        issue.prefixed(prefix),
+        cause: cause ?? this,
+        causeStackTrace: causeStackTrace ?? stackTrace,
+        contextStackTrace: StackTrace.current,
+      );
   @override
   String toString() => 'DesignValidationException($issue)';
 }
