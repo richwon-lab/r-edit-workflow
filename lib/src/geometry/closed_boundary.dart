@@ -1,10 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_path.dart';
 import 'package:r_edit_workflow/src/geometry/point2.dart';
+
 part 'closed_boundary.freezed.dart';
 part 'closed_boundary.g.dart';
 
@@ -19,6 +19,7 @@ sealed class ClosedBoundary {
 
   /// from 단위의 모든 길이를 to로 환산하고 수치 조건을 다시 검사한다.
   /// 변환 실패는 GeometryValidationException이며 반올림·회전·미지원 형상 대체를 수행하지 않는다.
+  @useResult
   ClosedBoundary converted({required LengthUnit from, required LengthUnit to});
 
   /// circle/path 태그와 필수 구조를 복원하고 실제 생성자 검증을 적용한다.
@@ -113,6 +114,7 @@ final class CircleBoundary extends ClosedBoundary with _$CircleBoundary {
     ..._$CircleBoundaryToJson(this),
   };
   @override
+  @useResult
   CircleBoundary converted({required LengthUnit from, required LengthUnit to}) {
     Point2 convertedCenter;
     try {
@@ -170,6 +172,7 @@ final class PathBoundary extends ClosedBoundary with _$PathBoundary {
     ..._$PathBoundaryToJson(this),
   };
   @override
+  @useResult
   PathBoundary converted({required LengthUnit from, required LengthUnit to}) {
     try {
       return PathBoundary(

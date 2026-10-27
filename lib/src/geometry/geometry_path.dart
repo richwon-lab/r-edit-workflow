@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
 import 'package:r_edit_workflow/src/geometry/path_segments.dart';
 import 'package:r_edit_workflow/src/geometry/point2.dart';
+
 part 'geometry_path.freezed.dart';
 part 'geometry_path.g.dart';
 
@@ -81,6 +81,7 @@ final class GeometryPath with _$GeometryPath {
 
   /// 시작점과 모든 구간 끝점을 함께 환산하고 원호 bulge는 유지한다.
   /// 환산으로 좌표가 소실되거나 구간이 퇴화하면 정상 값으로 보정하지 않는다.
+  @useResult
   GeometryPath converted({required LengthUnit from, required LengthUnit to}) {
     final converted = <PathSegment>[];
     for (var i = 0; i < segments.length; i++) {

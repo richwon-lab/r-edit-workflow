@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'api_documentation.dart';
 import 'generated_sources.dart';
 
 /// 고정 SDK로 생성·분석·테스트·소비자를 검사한다. 인덱스는 변경하지 않는다.
@@ -59,6 +60,7 @@ Future<void> main(List<String> arguments) async {
     'test',
     'tool/verify.dart',
     'tool/generated_sources.dart',
+    'tool/api_documentation.dart',
     if (Directory('example').existsSync()) 'example',
     for (final file in Directory('tool').listSync().whereType<File>())
       if (file.path.endsWith('_release.dart')) file.path,
@@ -80,7 +82,12 @@ Future<void> main(List<String> arguments) async {
       Platform.environment['GITHUB_ACTIONS'] == 'true') {
     await checkGeneratedSourcesInGit(root);
   }
-  await run(pub, ['analyze']);
+  await run(pub, ['analyze', '--fatal-infos']);
+  await verifyApiDocumentation(
+    dart: dart,
+    root: root,
+    environment: environment,
+  );
   await run(pub, ['test']);
   if (app) {
     if (arguments.contains('--windows')) {

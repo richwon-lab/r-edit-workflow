@@ -1,8 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
+
 part 'point2.freezed.dart';
 part 'point2.g.dart';
 
@@ -42,6 +42,7 @@ final class Point2 with _$Point2 {
   Map<String, Object?> toJson() => _$Point2ToJson(this);
 
   /// 명시한 원본/대상 단위로 두 좌표를 함께 환산한다. 반올림·회전은 하지 않는다.
+  @useResult
   Point2 converted({required LengthUnit from, required LengthUnit to}) =>
       Point2(
         x: convertGeometryLength(x, from, to, 'x'),

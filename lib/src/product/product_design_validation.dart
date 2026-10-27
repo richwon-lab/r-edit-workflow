@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:r_edit_workflow/src/design/applied_design_geometry.dart';
 import 'package:r_edit_workflow/src/design/design_errors.dart';
 import 'package:r_edit_workflow/src/design/text_area_input_validation.dart';
@@ -11,6 +12,7 @@ import 'package:r_edit_workflow/src/product/product_input.dart';
 /// 적용 ID와 제품 ID는 각각의 소유 목록에서 유일해야 하며 서로 별도 이름 공간이다.
 /// 제품 입력 오류는 `products[i].textInputs[j]`, 누락 정의는 `appliedGeometries[k].geometry.textAreas[j]`를 가리킨다.
 /// 모든 인덱스는 전달 목록의 0 기반 위치다. 하위 issue의 원래 코드·경로·상세도 함께 보존한다.
+@useResult
 List<ProductDesignIssue> validateProductDesignConfiguration({
   required List<AppliedDesignGeometry> appliedGeometries,
   required List<ProductInput> products,

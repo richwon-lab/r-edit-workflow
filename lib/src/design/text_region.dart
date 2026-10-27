@@ -44,6 +44,7 @@ final class TextRegion with _$TextRegion {
   Map<String, Object?> toJson() => _$TextRegionToJson(this);
 
   /// 외부/제외 경계를 함께 환산하며 관계를 자동 보정하거나 분할하지 않는다.
+  @useResult
   TextRegion converted({required LengthUnit from, required LengthUnit to}) =>
       TextRegion(
         outer: _convertBoundary(outer, from, to, 'outer'),

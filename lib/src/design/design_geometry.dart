@@ -105,6 +105,7 @@ final class DesignGeometry with _$DesignGeometry {
 
   /// 단위는 유지하고 구성요소만 교체해 소유 ID 검증을 다시 수행한다.
   /// 단위만 바꾸는 수정 경로를 막기 위해 이 메서드만 직접 작성했다.
+  @useResult
   DesignGeometry copyWith({
     ClosedBoundary? outline,
     List<CutoutDefinition>? cutouts,
@@ -118,6 +119,7 @@ final class DesignGeometry with _$DesignGeometry {
 
   /// 외곽·모든 관통 경계·영역 외부/제외 경계와 문맥을 함께 환산한다.
   /// ID/label을 바꾸지 않으며 실패하면 기존 값을 보존한다. 회전/출력 배열은 없다.
+  @useResult
   DesignGeometry convertedTo(LengthUnit target) {
     final from = coordinateSpace.lengthUnit;
     final convertedCutouts = <CutoutDefinition>[];

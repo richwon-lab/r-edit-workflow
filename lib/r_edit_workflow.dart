@@ -1,5 +1,7 @@
 /// R-edit의 영역별 원문·줄 입력과 최소 기하 값을 위한 공개 API.
-library;
+// dart doc의 include가 라이브러리 이름을 사용하므로 공개 진입점 이름을 명시한다.
+// ignore: unnecessary_library_name
+library r_edit_workflow;
 
 export 'src/design/applied_design_geometry.dart' show AppliedDesignGeometry;
 export 'src/design/cutout_definition.dart' show CutoutDefinition;

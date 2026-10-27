@@ -1,10 +1,10 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 import 'package:r_edit_workflow/src/geometry/closed_boundary.dart';
 import 'package:r_edit_workflow/src/geometry/coordinate_space.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_errors.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_json.dart';
 import 'package:r_edit_workflow/src/geometry/geometry_path.dart';
+
 part 'drawing_geometry.freezed.dart';
 part 'drawing_geometry.g.dart';
 
@@ -59,6 +59,7 @@ final class DrawingGeometry with _$DrawingGeometry {
 
   /// 단위와 모든 길이를 함께 바꾸고 원호 bulge와 실형상의 의미를 유지한다.
   /// 표현할 수 없는 환산은 예외다. 화면·출력 배열·회전·반전은 수행하지 않는다.
+  @useResult
   DrawingGeometry convertedTo(LengthUnit target) {
     final from = coordinateSpace.lengthUnit;
     final newPaths = <GeometryPath>[];

@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:r_edit_workflow/src/design/applied_design_geometry.dart';
 import 'package:r_edit_workflow/src/design/cutout_definition.dart';
 import 'package:r_edit_workflow/src/design/text_area_definition.dart';
@@ -18,6 +19,7 @@ import 'package:r_edit_workflow/src/product/product_design_configuration.dart';
 /// 빈 결과는 전체 변경 허용/배치·제작·저장 가능 판정이 아니다.
 /// 제거 ID의 과거 재사용·A→B→A·제품 보존·영역 대응·안전 반영은 검사하지 않는다.
 /// 준비/반영에는 별도 기준/세션·개정 확인이 필요하다.
+@useResult
 List<AppliedGeometryIdConflict> validateAppliedGeometryIdConsistency({
   required ProductDesignConfiguration previous,
   required ProductDesignConfiguration next,

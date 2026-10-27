@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:r_edit_workflow/src/design/design_errors.dart';
 import 'package:r_edit_workflow/src/design/design_geometry.dart';
 import 'package:r_edit_workflow/src/text_area_input.dart';
@@ -9,6 +10,7 @@ import 'package:r_edit_workflow/src/text_area_input.dart';
 /// 중복/미정의 입력의 fieldPath는 `inputs[i].areaId`, 누락은 정의의 `textAreas[i].areaId`다.
 /// i는 전달 목록의 0 기반 위치이며 같은 ID도 다른 도안의 영역으로 추정하지 않는다.
 /// 값 생성 오류를 새로 수집하지 않으며 이미 생성된 입력의 독립 연결 issue만 반환한다.
+@useResult
 List<DesignValidationIssue> validateTextAreaInputs({
   required DesignGeometry design,
   required List<TextAreaInput> inputs,

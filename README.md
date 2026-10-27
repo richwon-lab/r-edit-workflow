@@ -59,7 +59,7 @@ areaId는 빈 문자열을 허용하지 않고 표시 이름·원문으로 생�
 
 | 코드                                           | 의미 / 경로 예                                                                |
 |------------------------------------------------|-------------------------------------------------------------------------------|
-| missingField / invalidType                     | 필수 누락 / 타입 오류, areaId·sourceText·lineBreak.mode·lineBreak.lines[1] 등 |
+| missingField / invalidType                     | 필수 누락 / 타입 오류, areaId·sourceText·lineBreak.mode·`lineBreak.lines[1]` 등 |
 | unknownLineBreakMode / unexpectedField         | 알 수 없는 방식 / 허용하지 않은 필드                                          |
 | emptyAreaId / emptySourceText                  | 빈 식별자 / 이번 미지원 빈 원문                                               |
 | emptySpecifiedLines / emptySpecifiedLine       | 빈 지정 목록 / 이번 미지원 빈 줄                                              |
@@ -172,3 +172,11 @@ geometry/source 전체를 비교하고, 구성의 적용 목록 재정렬·제�
 공개 소비자 예제는 example/product_configuration.dart, 경로/실패 조건/검증 결과는
 [변경 계약의 현재 구현](docs/product-design-change.md)에 있다.
 빈 결과는 전체 변경 허용이 아니며 역사적 ID 재사용·A→B→A·영역 대응·안전 반영·배치/제작/저장은 보장하지 않는다.
+
+
+## 개발 기반 보완
+
+현재 도구·호환성·명령·검사 범위는 [개발 기반 보완](docs/development-foundation-additions.md)을 따른다.
+Flutter 3.47.7/Dart 3.13.5와 기존 Freezed/생성기 기준은 유지한다.
+로컬 전체 검증: ./tool/fvm.ps1 dart tool/verify.dart
+분석은 --fatal-infos를 사용해 안내 수준의 채택 lint도 실패로 처리한다.

@@ -248,8 +248,8 @@ void main() {
           ],
         );
         try {
-          original.convertedTo(LengthUnit.millimeter);
-          fail('수치 실패 누락');
+          final unexpected = original.convertedTo(LengthUnit.millimeter);
+          fail('수치 실패 대신 정상값을 반환함: ${unexpected.runtimeType}');
         } on GeometryValidationException catch (e) {
           expect(e.fieldPath, 'textAreas[0].region.exclusions[0].radius');
           expect(e.code, GeometryErrorCode.numericRepresentationFailure);

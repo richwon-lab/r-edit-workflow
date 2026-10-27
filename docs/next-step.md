@@ -280,3 +280,21 @@ AppliedGeometryIdConflict의 잘못된 인자를 ArgumentError.value의 name/inv
 여러 인자의 위반 검사 순서는 계약이 아니다. 비교 알고리즘·공개 충돌 필드·허용 조건은 유지했다.
 실제 검사: 인자 진단 14개·내용 비교 41개 단독, 전체 502개·분석·생성 안정성·AOT 7개·생성 없는 소비자 성공.
 원격 CI/다른 OS는 미실행이며 다음 업무 작업은 앞선 제품별 영역 입력 대응 검증 범위 확정을 유지한다.
+
+## 개발 기반 보완 — 2026-10-28
+
+[현행 기준과 명령](development-foundation-additions.md)을 적용했다.
+앱은 riverpod_lint 3.1.9, go_router_builder 4.5.2/go_router 17.3.0과 공식 한국어화를 사용한다.
+workflow는 meta 1.19.0의 선별 @useResult와 SDK dart doc 검사를 사용한다.
+업무 값·JSON·기하·도안 변경·로그 정책은 변경하지 않았다.
+
+실제 검사: 앱 전체 검증 46개 테스트·Windows debug 빌드, workflow 전체 검증
+502개 테스트·AOT 7개·생성 없는 소비자 실행, 문서 경고/오류 0건.
+격리 자료에서 Provider 오용, 외부 소비자의 반환값 무시, 끊어진 문서 참조를 검출했다.
+격리 앱의 오래된/누락 지역화 파일은 첫 pub get이 재생성해도 초기 상태 비교에서 실패했다.
+Windows 정상 시작 화면은 시각 확인했다. 이후 기본 위젯 검사 앱의 화면 캡처는
+no monitor found for window로 실패했다. Material·Cupertino 한국어 리소스는 위젯 테스트로 확인했다.
+IDE 분석 실행, 원격 Actions 실행, HTML 생성/시각 검증은 하지 않았다.
+
+다음 한 가지: 제품별 영역 입력 대응(유지/명시 매핑/개별 제거) 검증의 최소 구현 범위를 확정한다.
+이번 도구 적용을 새 업무 기능이나 안전한 도안 변경 반영 완료로 해석하지 않는다.

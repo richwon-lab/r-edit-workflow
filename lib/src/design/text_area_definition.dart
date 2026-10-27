@@ -61,6 +61,7 @@ final class TextAreaDefinition with _$TextAreaDefinition {
   Map<String, Object?> toJson() => _$TextAreaDefinitionToJson(this);
 
   /// 영역의 전체 경계만 환산한다. areaId/label은 보존한다.
+  @useResult
   TextAreaDefinition converted({
     required LengthUnit from,
     required LengthUnit to,

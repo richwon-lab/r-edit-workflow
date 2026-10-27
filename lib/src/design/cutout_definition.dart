@@ -52,6 +52,7 @@ final class CutoutDefinition with _$CutoutDefinition {
   Map<String, Object?> toJson() => _$CutoutDefinitionToJson(this);
 
   /// 문맥 단위를 명시해 경계만 환산하고 안정 ID는 보존한다.
+  @useResult
   CutoutDefinition converted({
     required LengthUnit from,
     required LengthUnit to,

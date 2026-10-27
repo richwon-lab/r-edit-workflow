@@ -22,8 +22,8 @@ void main() {
           areas: [a],
         );
         try {
-          original.copyWith(textAreas: [a, a]);
-          fail('중복 허용');
+          final unexpected = original.copyWith(textAreas: [a, a]);
+          fail('중복을 허용해 정상값을 반환함: ${unexpected.runtimeType}');
         } on DesignValidationException catch (e) {
           final details = e.issue.details as DesignDuplicateDetails;
           expect(details.firstIndex, 0);

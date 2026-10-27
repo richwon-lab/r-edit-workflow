@@ -44,3 +44,11 @@
 - 코드별 필수 상세와 허용 타입은 런타임에서 보장한다. toString 분석·임의 Map·원문 전체 보관은 금지한다.
 - 같은 예외는 rethrow, 문맥 변환은 원인 객체와 스택을 보존한다. 오류 API 변경 시 소비자 예제·중첩 경로·AOT도 검사한다.
 - workflow는 root 로거·구독·파일·Flutter 핸들러를 소유하지 않는다. 값/검증 함수마다 로그를 추가하지 않으며 실제 필요 없는 로거 추상화·Result 패키지는 도입하지 않는다.
+
+## 개발 기반 보완 (2026-10-28)
+
+- [개발 기반 보완](docs/development-foundation-additions.md)을 따른다. Dependabot 및 다른 자동 갱신 도구는 보류한다.
+- 앱은 riverpod_lint의 공식 분석 플러그인과 fatal-infos 검사, go_router_builder의 타입 라우트, 공식 ARB/gen_l10n 한국어화를 사용한다.
+- workflow는 결과를 버리면 호출 목적이 사라지는 API에 meta의 @useResult를 선별 적용한다. annotation을 런타임 검증 대신 사용하지 않는다.
+- 지역화 생성 파일은 Git 관리하고 첫 pub get 이전 상태와 비교한다. 반복 생성 안정성과 CI Git 포함 검사는 별도 조건이다.
+- workflow 문서는 SDK dart doc --dry-run과 경고/오류 거부 경계로 검사한다. IDE 실행·HTML 시각 확인·원격 CI를 로컬 성공과 혼동하지 않는다.
