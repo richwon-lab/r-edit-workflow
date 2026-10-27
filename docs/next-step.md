@@ -272,3 +272,11 @@ validateAppliedGeometryIdConsistency와 전용 AppliedGeometryIdConflict를 공�
 
 다음 한 가지는 제품별 영역 입력 대응(유지/명시 매핑/개별 제거) 검증의 최소 구현 범위를 확정하는 것이다.
 요청/준비/반영·세션 개정·역사적 재사용·결과 무효화·배치/제작/저장은 미구현이다.
+
+## 충돌 진단 생성자 인자 검증 보완 (2026-10-28)
+
+AppliedGeometryIdConflict의 잘못된 인자를 ArgumentError.value의 name/invalidValue/message로 구분한다.
+중복/문법 오류는 changedFieldPaths의 문제 항목 위치와 값만 제공하며, 빈 목록 외 전체 목록을 출력하지 않는다.
+여러 인자의 위반 검사 순서는 계약이 아니다. 비교 알고리즘·공개 충돌 필드·허용 조건은 유지했다.
+실제 검사: 인자 진단 14개·내용 비교 41개 단독, 전체 502개·분석·생성 안정성·AOT 7개·생성 없는 소비자 성공.
+원격 CI/다른 OS는 미실행이며 다음 업무 작업은 앞선 제품별 영역 입력 대응 검증 범위 확정을 유지한다.

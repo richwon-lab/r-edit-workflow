@@ -46,7 +46,14 @@ void main() {
     );
     // 진단 API 오용의 런타임 거부를 검사한다. 일반 충돌을 catch하지 않는다.
     // ignore: avoid_catching_errors
-  } on ArgumentError {
+  } on ArgumentError catch (error) {
+    final message = error.message;
+    if (error.name != 'previousIndex' ||
+        error.invalidValue != -1 ||
+        message is! String ||
+        !message.contains('0 이상')) {
+      throw StateError('AOT 인자 거부 진단 정보 누락');
+    }
     rejected = true;
   }
   if (!rejected) throw StateError('assert 없이 진단 검증이 동작하지 않음');

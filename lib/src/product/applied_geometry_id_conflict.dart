@@ -12,23 +12,61 @@ enum AppliedGeometryIdConflictCode {
 /// 스냅샷·원문·JSON을 보관하지 않으며 내용 변경의 위치만 제공한다.
 final class AppliedGeometryIdConflict {
   /// 필수 ID·0 기반 인덱스·중복 없는 비어 있지 않은 경로 목록을 검사한다.
-  /// 잘못된 진단 구성은 assert 비활성 환경에서도 ArgumentError다.
+  /// 잘못된 진단 구성은 assert 비활성 환경에서도 ArgumentError.value로 거부한다.
+  /// name/invalidValue/message에 인자·문제 값·위반 조건을 제공하고 항목 오류는 name에 위치를 포함한다.
+  /// 여러 인자가 잘못된 경우 검사 순서는 계약이 아니다.
   AppliedGeometryIdConflict({
     required this.appliedGeometryId,
     required this.previousIndex,
     required this.nextIndex,
     required List<String> changedFieldPaths,
   }) : changedFieldPaths = List.unmodifiable(changedFieldPaths) {
-    if (appliedGeometryId.isEmpty ||
-        previousIndex < 0 ||
-        nextIndex < 0 ||
-        this.changedFieldPaths.isEmpty ||
-        this.changedFieldPaths.toSet().length !=
-            this.changedFieldPaths.length ||
-        this.changedFieldPaths.any(
-          (path) => _snapshotFieldPath.firstMatch(path)?.end != path.length,
-        )) {
-      throw ArgumentError('적용 ID 충돌의 ID·인덱스·변경 경로가 잘못되었습니다.');
+    if (appliedGeometryId.isEmpty) {
+      throw ArgumentError.value(
+        appliedGeometryId,
+        'appliedGeometryId',
+        'ID는 빈 문자열일 수 없습니다.',
+      );
+    }
+    if (previousIndex < 0) {
+      throw ArgumentError.value(
+        previousIndex,
+        'previousIndex',
+        '이전 선언 인덱스는 0 이상이어야 합니다.',
+      );
+    }
+    if (nextIndex < 0) {
+      throw ArgumentError.value(
+        nextIndex,
+        'nextIndex',
+        '다음 선언 인덱스는 0 이상이어야 합니다.',
+      );
+    }
+    if (this.changedFieldPaths.isEmpty) {
+      throw ArgumentError.value(
+        this.changedFieldPaths,
+        'changedFieldPaths',
+        '변경 경로 목록에는 항목이 하나 이상 필요합니다.',
+      );
+    }
+    final firstIndices = <String, int>{};
+    for (final (index, path) in this.changedFieldPaths.indexed) {
+      if (_snapshotFieldPath.firstMatch(path)?.end != path.length) {
+        throw ArgumentError.value(
+          path,
+          'changedFieldPaths[$index]',
+          '현재 스냅샷 필드 경로 문법에 맞아야 합니다.',
+        );
+      }
+      final first = firstIndices[path];
+      if (first != null) {
+        throw ArgumentError.value(
+          path,
+          'changedFieldPaths[$index]',
+          '중복 경로입니다. 첫 위치: changedFieldPaths[$first].',
+        );
+      }
+      firstIndices[path] = index;
     }
   }
 
