@@ -1,6 +1,6 @@
 # 제품 적용 도안 변경 계약 — 설계
 
-2026-10-27, r_edit_workflow 문서 설계다. 아래 새 이름·입출력·오류 코드는 추천안이며 아직 공개 API가 아니다.
+2026-10-27 설계와 후속 최소 구현 기록이다. 현행 공개 구현은 12절의 공통 적용 ID 내용 비교다. 요청/준비/반영 API는 여전히 추천안이다.
 이 문서의 ‘도안 변경’은 AppliedDesignGeometry의 형상·영역·출처 변경이다. 전체 제작 조건을 가진 AppliedDesign 변경이 아니다.
 
 ## 1. 기준과 현재 보장
@@ -19,10 +19,10 @@
 | 구분 | 현재 상태 |
 |---|---|
 | 구현됨 | 불변 형상/영역·원문/줄 입력·출처·제품 값, 현재 구성의 소유 ID·참조·영역 대응 검증 |
-| 실제 API의 한계 | AppliedDesignGeometry는 일반 copyWith가 없으나, 별도 생성한 같은 ID의 다른 내용을 구성 전후에서 비교하지 않음 |
+| 실제 API의 한계 | AppliedDesignGeometry 단독 생성자는 과거 내용을 모르며 전후 비교는 별도 validateAppliedGeometryIdConsistency 호출 책임 |
 | 구현됨 | validateTextAreaInputs는 입력 중복/미정의/누락, validateProductDesignConfiguration은 소유 ID와 제품 참조의 독립 issue 수집 |
 | 이번 설계 | 요청 → 영향/대응 확인 → 후보 검증 → 현재 기준 재확인 → 명시적 새 구성 반환 |
-| 미구현 | 이 문서의 모든 새 API·변경 실행·세션 개정·이력 추적·결과/확인 무효화 실행·저장/동기화 |
+| 미구현 | 요청/준비/반영 API·변경 실행·세션 개정·이력 추적·결과/확인 무효화 실행·저장/동기화 |
 
 과거 product-design-binding의 변경 제안은 이 문서로 구체화한다. 당시 ‘현재 구현’ 표와 예시를 최신 API 목록으로 읽지 않는다.
 
@@ -610,7 +610,7 @@ Ready 생성/수정 경로가 검증을 우회하지 않도록 copyWith/JSON 복
 | 후속 책임 | 제거 ID의 역사적 재사용/실행 취소·미사용 스냅샷 정리 수명·계산 의존성/결과 재사용·제작 조건 확장 |
 | 범위 밖 | 전체 이력 저장소·범용 변경 프레임워크·DB·파일/Drive 원자성·동기화/잠금·UI·엔진·DXF |
 
-## 11. 문서 검사와 실행 범위
+## 11. 설계 작성 당시 문서 검사와 실행 범위
 
 JSON 블록과 사례 표는 문서용 관계 대조 대상이다.
 참조 ID·정의/입력 대응·지정 줄 연결·원문 코드 단위·공통 ID의 기존 내용·비대상 보존을 검사한다.
@@ -623,3 +623,95 @@ JSON 블록과 사례 표는 문서용 관계 대조 대상이다.
 표의 변경 사례에 대한 구조 대조를 확인했다. 문서용 보조 검사 79개와 수정 문서 6개의 로컬 링크 74개가 통과했다.
 이 수치를 제품 테스트 개수로 취급하지 않는다. git diff --check를 통과했으며 문서 외 변경/스테이징은 없다.
 Dart 명령과 형제 앱 변경·커밋·푸시·스테이징은 수행하지 않았다.
+
+
+## 12. 공통 적용 ID 내용 불변 검증 — 현재 구현
+
+### 실제 공개 API와 책임
+
+- validateAppliedGeometryIdConsistency(previous:, next:) → `List<AppliedGeometryIdConflict>`.
+  입력은 현재 생성자가 검증한 유효 ProductDesignConfiguration 두 개다.
+- 정상 충돌은 수정 불가 목록으로 반환한다. AppliedGeometryIdConflictCode.snapshotContentConflict만 구현했다.
+- 진단 필드는 appliedGeometryId/previousIndex/nextIndex/fieldPath/changedFieldPaths/code다.
+  선언 인덱스는 각 구성의 appliedGeometries에서 0 기반이다.
+- 한 구성의 값/참조 오류가 아니라 두 구성 사이의 내용 불변 문제이므로 기존 ProductDesignErrorCode와 분리했다.
+
+함수 파일은 lib/src/product/applied_geometry_id_consistency.dart, 진단은 applied_geometry_id_conflict.dart다.
+공개 진입점은 lib/r_edit_workflow.dart다. 실제 사용하는 충돌 한 종류만 구현했으며 미래 enum 항목은 없다.
+진단은 기존 오류처럼 작은 읽기 전용 타입이다. JSON 복원/값 편집 모델이 아니므로 copyWith/JSON API를 만들지 않았다.
+임의 객체 diff·JSON 비교·새 의존성·로깅은 추가하지 않았다.
+
+공통 ID를 연결한 뒤 기존 AppliedDesignGeometry 전체 값 동등성으로 비교한다.
+구성의 적용 목록 재정렬은 충돌이 아니며, 스냅샷 내부 목록의 순서는 내용이다.
+제품 목록/원문/줄 입력은 검사/변경하지 않는다. 참조 동일성·ID/hashCode·JSON 문자열·출처만으로 내용을 판정하지 않는다.
+
+### 변경 경로의 기준
+
+fieldPath는 next.appliedGeometries[k]다. changedFieldPaths는 그 스냅샷 값 기준의 상대 Dart 필드 경로다.
+예를 들어 geometry.outline.radius를 연결하면 next.appliedGeometries[k].geometry.outline.radius다.
+목록의 실제 인덱스와 존재하는 필드만 따라가며 JSON 선택 키의 출력 유무와 구분한다.
+
+| 상황 | 상대 경로 |
+|---|---|
+| 같은 종류의 수치/문자열/ID 변경 | geometry.outline.center.x / geometry.cutouts[0].cutoutId / geometry.textAreas[0].label 등 |
+| 같은 종류의 경로/원호 변경 | ...path.start.x / ...path.segments[0].end.x / ...path.segments[0].bulge |
+| 목록 길이 변경 | geometry.cutouts / geometry.textAreas / ...exclusions / ...segments처럼 목록 전체 |
+| 길이 같은 내부 목록 재정렬 | 같은 인덱스끼리 비교한 실제 변경 필드. 내부 목록을 ID로 정렬하지 않음 |
+| circle↔path 또는 line↔arc | 경계/구간 전체. geometry.outline / ...segments[0] |
+| source 유무 변경 | source. 존재하지 않는 하위 필드를 나열하지 않음 |
+| source 둘 다 있음 | source.sourceDesignId / source.sourceRevision의 실제 차이 |
+
+길이가 바뀌면 기존 항목의 변경도 그 목록 전체 경로가 포괄하며 개별 추가/삭제 인덱스를 덧붙이지 않는다.
+종류가 바뀌면 없는 radius/bulge가 있다고 보고하지 않는다.
+sourceRevision은 nullable Dart 필드다. 충돌 목록과 변경 경로 목록의 순서는 공개 계약이 아니다.
+
+### 진단의 런타임 조건
+
+code는 고정 getter이므로 다른 코드/상세 조합을 전달할 수 없다.
+생성자는 빈 ID·음수 선언 인덱스·빈/중복 경로·현재 스냅샷 필드 문법 밖의 경로를 ArgumentError로 거부한다.
+ID는 trim/정규화하지 않고 경로 목록을 방어 복사한다. fieldPath는 nextIndex에서 계산한다.
+전체 스냅샷을 보관하지 않으므로 외부에서 직접 만든 진단이 실제 자료와 맞는지,
+목록 인덱스가 그 자료의 범위 안인지까지 생성자가 증명하지 않는다.
+검증 함수는 실제 타입을 따라 현재 존재하는 위치를 생성한다.
+값 동등성과 경로 수집이 어긋나는 새 필드 처리 누락 등의 코드 결함은 StateError로 드러내며 정상 충돌로 숨기지 않는다.
+원문/전체 JSON/스냅샷은 진단에 복제하지 않는다.
+
+소비자는 아래처럼 공개 필드를 처리한다. 실행 가능한 소비자 검증 예제는 example/product_configuration.dart다.
+
+~~~dart
+final conflicts = validateAppliedGeometryIdConsistency(
+  previous: previousConfiguration,
+  next: nextConfiguration,
+);
+for (final conflict in conflicts) {
+  final code = conflict.code;
+  final appliedId = conflict.appliedGeometryId;
+  final oldIndex = conflict.previousIndex;
+  final newIndex = conflict.nextIndex;
+  final ownerPath = conflict.fieldPath;
+  final changedFields = conflict.changedFieldPaths;
+  // 앱 경계에서 변경을 거부하고 새 ID를 요구한다. 메시지를 파싱하지 않는다.
+}
+~~~
+
+### 검사 범위의 한계
+
+두 구성은 각각 유효해도 같은 ID의 내용이 다를 수 있다.
+PDC 생성/JSON 복원에 이 함수를 자동 삽입하지 않았다. 전후 두 값을 호출자가 명시적으로 전달해야 한다.
+새 ID/제거 ID/공통 ID 없음/다른 ID의 동일 내용은 충돌이 아니며 자동 병합도 하지 않는다.
+전체 단위 환산은 실제 크기가 같아도 저장 단위/수치가 달라져 같은 ID이면 충돌이다.
+임의 반올림·허용오차·물리적 동등성 판정은 추가하지 않았다.
+
+빈 진단은 공통 ID 내용 충돌이 없다는 뜻일 뿐 전체 변경 허용이 아니다.
+제거된 ID의 역사적 재사용·A→B→A·제품 보존·영역 대응·안전 반영·배치/제작/저장은 보장하지 않는다.
+실제 준비/반영에는 기준 구성 재확인과 별도 세션/개정 검사가 필요하다.
+API 오용/내부 결함을 잡아 빈 진단으로 바꾸지 않는다.
+
+### 실제 검증 (2026-10-27)
+
+새 책임별 테스트 단독 실행: 내용 비교 41개·진단 13개 성공.
+명시적 코드 생성 후 전체 verify: 시작 생성 일치·반복 안정성·포맷·분석(No issues)·501개 테스트 성공.
+assert 비활성 AOT 7개와 생성기 없는 독립 소비자의 공개 API 사용·컴파일·실행도 성공했다.
+기존 원문/줄바꿈·JSON·기하·참조 테스트를 유지했고 새 검사는 실제 모델로 기대 코드/경로/인덱스를 대조한다.
+SDK·의존성·CI·앱·로깅은 변경하지 않았다. 원격 CI/다른 OS는 실행하지 않았다.
+스테이징·커밋·푸시와 미구현 변경 기능은 수행하지 않았다.

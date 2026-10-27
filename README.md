@@ -160,3 +160,15 @@ invalidType은 기대/실제 타입, 미지원 값은 실제 값/지원 목록�
 예외/issue 생성자는 코드별 상세를 런타임 검사하므로 const가 아니다. 기존 상세 없는 직접 생성은 변경이 필요하다.
 JSON·원문·기하·값 검증 조건은 유지한다. Error를 입력 issue나 정상 결과로 바꾸지 않는다.
 이 패키지는 root 로거/Flutter/파일 출력을 소유하지 않으며 앱의 로깅 의존성도 전파하지 않는다.
+
+## 공통 적용 ID 내용 불변 검사
+
+validateAppliedGeometryIdConsistency(previous:, next:)는 두 유효 구성의 공통 ID 전체 내용을 비교한다.
+반환은 수정 불가 `List<AppliedGeometryIdConflict>`이며 정상 충돌은 예외가 아니다.
+geometry/source 전체를 비교하고, 구성의 적용 목록 재정렬·제품 입력·새/제거 ID는 검사 대상이 아니다.
+스냅샷 내부 목록 순서와 전체 단위 환산은 같은 ID이면 내용 충돌이다.
+진단은 code/appliedGeometryId/previousIndex/nextIndex/fieldPath/changedFieldPaths로 처리한다.
+
+공개 소비자 예제는 example/product_configuration.dart, 경로/실패 조건/검증 결과는
+[변경 계약의 현재 구현](docs/product-design-change.md)에 있다.
+빈 결과는 전체 변경 허용이 아니며 역사적 ID 재사용·A→B→A·영역 대응·안전 반영·배치/제작/저장은 보장하지 않는다.

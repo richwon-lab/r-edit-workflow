@@ -66,5 +66,26 @@ void main() {
       throw StateError('필수 타입 상세 누락');
     }
   }
-  stdout.writeln('제품 참조·지정 한 줄·구조화 타입 진단 확인');
+  final changed = ProductDesignConfiguration(
+    appliedGeometries: [
+      AppliedDesignGeometry(
+        appliedGeometryId: applied.appliedGeometryId,
+        geometry: geometry.copyWith(
+          outline: CircleBoundary(center: Point2(x: 0, y: 0), radius: 21),
+        ),
+      ),
+    ],
+    products: configuration.products,
+  );
+  final conflicts = validateAppliedGeometryIdConsistency(
+    previous: configuration,
+    next: changed,
+  );
+  if (conflicts.length != 1 ||
+      conflicts.single.code !=
+          AppliedGeometryIdConflictCode.snapshotContentConflict ||
+      conflicts.single.changedFieldPaths.single != 'geometry.outline.radius') {
+    throw StateError('소비자 공통 ID 내용 비교 실패');
+  }
+  stdout.writeln('제품 참조·지정 한 줄·구조화 진단·공통 ID 내용 비교 확인');
 }

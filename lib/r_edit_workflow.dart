@@ -40,6 +40,10 @@ export 'src/geometry/geometry_errors.dart'
 export 'src/geometry/geometry_path.dart' show GeometryPath;
 export 'src/geometry/path_segments.dart' show ArcTo, LineTo, PathSegment;
 export 'src/geometry/point2.dart' show Point2;
+export 'src/product/applied_geometry_id_conflict.dart'
+    show AppliedGeometryIdConflict, AppliedGeometryIdConflictCode;
+export 'src/product/applied_geometry_id_consistency.dart'
+    show validateAppliedGeometryIdConsistency;
 export 'src/product/product_design_configuration.dart'
     show ProductDesignConfiguration;
 export 'src/product/product_design_errors.dart'
@@ -59,7 +63,6 @@ export 'src/product/product_design_validation.dart'
 export 'src/product/product_input.dart' show ProductInput;
 export 'src/text_area_input.dart'
     show AutomaticLineBreak, LineBreakInput, SpecifiedLineBreak, TextAreaInput;
-
 export 'src/text_input_errors.dart'
     show
         TextInputCharacterDetails,
