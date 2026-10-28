@@ -87,5 +87,40 @@ void main() {
       conflicts.single.changedFieldPaths.single != 'geometry.outline.radius') {
     throw StateError('소비자 공통 ID 내용 비교 실패');
   }
-  stdout.writeln('제품 참조·지정 한 줄·구조화 진단·공통 ID 내용 비교 확인');
+  final prepared = prepareProductGeometryChange(
+    baseline: configuration,
+    request: ReviseAppliedGeometry(
+      sourceAppliedGeometryId: applied.appliedGeometryId,
+      proposedGeometry: AppliedDesignGeometry(
+        appliedGeometryId: 'geometry-2',
+        geometry: geometry.copyWith(
+          outline: CircleBoundary(center: Point2(x: 0, y: 0), radius: 21),
+        ),
+      ),
+      targets: [
+        ProductGeometryTarget(
+          productId: 'product-1',
+          areaMappings: [],
+          newTextInputs: [],
+          removedInputAreaIds: [],
+        ),
+      ],
+    ),
+  );
+  switch (prepared) {
+    case ReadyProductGeometryChange(:final summary):
+      if (summary.products.single.retainedAreaIds.single != 'title' ||
+          summary.products.single.proposedAppliedGeometryId != 'geometry-2') {
+        throw StateError('소비자 준비 요약 불일치');
+      }
+    case BlockedProductGeometryChange():
+      throw StateError('유효한 소비자 변경 요청이 거부됨');
+    case UnchangedProductGeometryChange():
+      throw StateError('새 ID 변경을 무변경으로 처리함');
+  }
+  // 후보는 공개되지 않으며 준비가 기준 값을 반영/교체하지 않는다.
+  if (configuration.products.single.appliedGeometryId != 'geometry-1') {
+    throw StateError('준비가 기준을 변경함');
+  }
+  stdout.writeln('제품 참조·지정 한 줄·구조화 진단·공통 ID 비교·도안 변경 준비 확인');
 }

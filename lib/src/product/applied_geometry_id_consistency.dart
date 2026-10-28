@@ -32,7 +32,7 @@ List<AppliedGeometryIdConflict> validateAppliedGeometryIdConsistency({
   for (final (nextIndex, value) in next.appliedGeometries.indexed) {
     final match = previousById[value.appliedGeometryId];
     if (match == null || match.$2 == value) continue;
-    final changed = _collectSnapshotChanges(match.$2, value);
+    final changed = collectAppliedGeometryContentChanges(match.$2, value);
     if (changed.isEmpty) {
       // 새 필드의 경로 수집 누락 같은 결함을 정상 충돌로 숨기지 않는다.
       throw StateError('스냅샷 값 비교와 변경 경로 수집이 일치하지 않습니다.');
@@ -49,7 +49,10 @@ List<AppliedGeometryIdConflict> validateAppliedGeometryIdConsistency({
   return List.unmodifiable(conflicts);
 }
 
-List<String> _collectSnapshotChanges(
+/// 내부 준비/비교가 공유하는 스냅샷 내용 경로 수집이다. ID 자체는 비교하지 않는다.
+/// 값 동등성과 같은 필드/순서 규약을 사용하며 불변 상대 경로를 반환한다.
+@internal
+List<String> collectAppliedGeometryContentChanges(
   AppliedDesignGeometry previous,
   AppliedDesignGeometry next,
 ) {
@@ -95,7 +98,7 @@ List<String> _collectSnapshotChanges(
       changed,
     );
   }
-  return changed;
+  return List.unmodifiable(changed);
 }
 
 void _collectCutoutChanges(

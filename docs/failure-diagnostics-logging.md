@@ -191,3 +191,13 @@ jni는 다른 플랫폼 구현에서 따라온 FFI 등록 정보이며 앱 업�
   자식 isolate·업무 I/O·배치 결과·저장·로그 조회/공유·원격 수집은 미구현이다.
 - 기존 스테이징은 비어 있었으며 유지했다. 실제 저장소에 stage/commit/push/reset/checkout을 수행하지 않았다.
 
+
+## 제품 도안 변경 준비의 정상 거부 (2026-10-28)
+
+[현행 준비 계약](product-design-change.md)의 ProductGeometryChangeIssue는 정상 미완료 요청의 진단이다.
+빈/없는/중복 대상, 모호한 영역 대응, 공통 ID 내용 충돌은 Blocked로 모으며 예외 메시지를 파싱하지 않는다.
+전용 코드별 상세·실제 request/baseline/candidate 경로를 런타임 검사한다.
+진단 생성 API 오용은 ArgumentError.value, 내부 불가능 상태는 StateError이며 정상 Blocked로 바꾸지 않는다.
+하위 DesignValidationIssue/ProductDesignIssue의 원래 코드·상대 경로·상세를 보존한다.
+준비 함수는 이미 유효한 값만 입력받으므로 하위 JSON/값 예외를 잡아 반복 포장하지 않는다.
+이 단계에는 로깅·I/O·앱 처리 경계가 없다. Ready는 최신 상태 반영 허가가 아니다.

@@ -62,7 +62,39 @@ export 'src/product/product_design_errors.dart'
         ProductDesignValidationException;
 export 'src/product/product_design_validation.dart'
     show validateProductDesignConfiguration;
+export 'src/product/product_geometry_change_errors.dart'
+    show
+        ChangeAppliedReferenceDetails,
+        ChangeAreaInputDetails,
+        ChangeAreaSelectionDetails,
+        ChangeAreaSide,
+        ChangeConfigurationDetails,
+        ChangeDuplicateTargetsDetails,
+        ChangeEmptyTargetsDetails,
+        ChangeIdentifierDetails,
+        ChangeSnapshotConflictDetails,
+        ChangeSourceDetails,
+        ChangeTargetDetails,
+        ProductGeometryChangeCode,
+        ProductGeometryChangeDetails,
+        ProductGeometryChangeIssue;
+export 'src/product/product_geometry_change_preparation.dart'
+    show
+        BlockedProductGeometryChange,
+        ProductGeometryChangePreparation,
+        ReadyProductGeometryChange,
+        UnchangedProductGeometryChange,
+        prepareProductGeometryChange;
+export 'src/product/product_geometry_change_request.dart'
+    show
+        ProductGeometryChangeRequest,
+        ReplaceAppliedGeometry,
+        ReviseAppliedGeometry;
+export 'src/product/product_geometry_change_summary.dart'
+    show ProductGeometryChangeSummary, ProductGeometryTargetSummary;
+export 'src/product/product_geometry_target.dart' show ProductGeometryTarget;
 export 'src/product/product_input.dart' show ProductInput;
+export 'src/product/text_area_input_mapping.dart' show TextAreaInputMapping;
 export 'src/text_area_input.dart'
     show AutomaticLineBreak, LineBreakInput, SpecifiedLineBreak, TextAreaInput;
 export 'src/text_input_errors.dart'

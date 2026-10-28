@@ -1,6 +1,6 @@
 # r_edit_workflow
 
-현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집과 현재 참조 검증까지 구현했으며 완전한 제작 도안·작업 파일·변경 명령은 아니다.
+현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집·현재 참조와 [변경 요청/전체 후보 준비](docs/product-design-change.md#13-요청영역-입력-대응전체-후보-준비-구현-2026-10-28)를 구현했다. 완전한 제작 도안·작업 파일·최종 반영 기능은 아니다.
 
 현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 외곽·관통 구멍·텍스트 영역의 [도안 구성과 입력 연결 검증](docs/design-geometry.md)을 구현했다. 전체 제작 조건을 포함한 적용 도안·계산/제작 기능은 아직 없다. 제품 입력/참조 구성은 위 계약 범위로 구현했다.
 
@@ -180,3 +180,16 @@ geometry/source 전체를 비교하고, 구성의 적용 목록 재정렬·제�
 Flutter 3.47.7/Dart 3.13.5와 기존 Freezed/생성기 기준은 유지한다.
 로컬 전체 검증: ./tool/fvm.ps1 dart tool/verify.dart
 분석은 --fatal-infos를 사용해 안내 수준의 채택 lint도 실패로 처리한다.
+
+## 제품 적용 형상 변경 준비
+
+ProductGeometryChangeRequest는 ReviseAppliedGeometry/ReplaceAppliedGeometry로 구분한다.
+proposedGeometry에는 ID와 실제 내용·선택 출처를 가진 AppliedDesignGeometry를 전달한다.
+제품별 ProductGeometryTarget의 areaMappings/newTextInputs/removedInputAreaIds는 모두 명시한다.
+prepareProductGeometryChange(baseline:, request:)는 정상 거부를 BlockedProductGeometryChange.issues로 수집한다.
+완전한 후보가 기준과 같으면 UnchangedProductGeometryChange, 다르면 ReadyProductGeometryChange다.
+Ready 후보/생성자는 비공개이며 임의 copyWith·요청/결과 JSON·최종 apply는 없다.
+원문·지정 한 줄·Unicode·입력 상대 순서를 보존하고 신규 입력만 뒤에 붙인다.
+정확한 위치·하위 진단·파일 구성과 한계는 [현행 변경 계약](docs/product-design-change.md)에 있다.
+생성기 없는 공개 소비자 예제는 example/product_configuration.dart의 준비 API 호출을 참고한다.
+다음 작업은 최종 반영 경계와 세션 개정 연결의 설계다.

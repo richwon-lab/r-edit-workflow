@@ -106,3 +106,12 @@ Get-ChildItem test -Recurse -Filter '*_test.dart' | ForEach-Object {
   if ($LASTEXITCODE -ne 0) { throw "단독 실행 실패: $($_.FullName)" }
 }
 ~~~
+
+## 제품 도안 변경 준비 테스트 추가 (2026-10-28)
+
+기존 사례를 이동/삭제하지 않고 새 책임에 다음 파일을 추가했다.
+- test/product/product_geometry_change_request_test.dart: 불변 요청·방어 복사·미완료 식별자.
+- test/product/product_geometry_change_preparation_test.dart: 명시 대상·공유·ID 내용·전체 준비 결과·요약.
+- test/product/text_area_input_change_preparation_test.dart: 실제 준비 내부 입력 투영의 원문/줄/순서·영역 선택 검증.
+- test/product/product_geometry_change_errors_test.dart: 전용 진단의 필수 상세·잘못된 조합·위치·방어.
+비공개 후보를 테스트용 공개 getter로 노출하지 않는다. 공통 준비는 support/product_geometry_changes.dart에 한정한다.

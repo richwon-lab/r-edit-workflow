@@ -1,6 +1,6 @@
 # 제품 적용 도안 변경 계약 — 설계
 
-2026-10-27 설계와 후속 최소 구현 기록이다. 현행 공개 구현은 12절의 공통 적용 ID 내용 비교다. 요청/준비/반영 API는 여전히 추천안이다.
+2026-10-27 설계와 후속 구현 기록이다. 현행 공개 구현은 12절 공통 ID 비교와 13절 요청/전체 후보 준비다. 최종 반영·세션 개정은 여전히 미구현 설계다.
 이 문서의 ‘도안 변경’은 AppliedDesignGeometry의 형상·영역·출처 변경이다. 전체 제작 조건을 가진 AppliedDesign 변경이 아니다.
 
 ## 1. 기준과 현재 보장
@@ -738,3 +738,116 @@ AppliedGeometryIdConflict의 허용 조건·공개 충돌 필드·비교 알고�
 이번 보완의 실제 검사: 인자 진단 14개·내용 비교 41개 단독 성공, 전체 verify의 502개 테스트·생성 일치/반복 안정성·분석 성공.
 assert 비활성 AOT 7개와 생성기 없는 소비자도 통과했으며 적용 ID AOT는 name/invalidValue/조건 설명까지 확인한다.
 비교 알고리즘·공개 필드·허용 조건·SDK·의존성은 유지했다. 원격 CI/다른 OS는 실행하지 않았다.
+
+## 13. 요청·영역 입력 대응·전체 후보 준비 구현 (2026-10-28)
+
+현행 구현은 요청 → 영역 선택 검증 → 전체 후보 준비까지다.
+1–11절은 설계 당시 기록이며 최종 apply/세션·개정 부분은 여전히 제안이다.
+12절의 공통 ID 비교는 유지하며 요청/준비에는 JSON 저장 API가 없다.
+
+### 공개 API와 파일 책임
+
+| 파일 (lib/src/product/) | 현행 책임 |
+|---|---|
+| product_geometry_change_request.dart | sealed ProductGeometryChangeRequest, ReviseAppliedGeometry, ReplaceAppliedGeometry와 Freezed 값 비교/수정 |
+| product_geometry_target.dart | 제품별 명시 targets의 areaMappings/newTextInputs/removedInputAreaIds 방어 복사 |
+| text_area_input_mapping.dart | fromAreaId/toAreaId의 명시 일대일 전달 값 |
+| text_area_input_change_preparation.dart | 내부 입력 투영·선택 충돌·하위 영역 진단 수집. 공개 진입점에서는 노출하지 않음 |
+| product_geometry_change_preparation.dart | prepareProductGeometryChange, 전체 후보 목록 검증/생성 |
+| product_geometry_change_result.dart | 같은 library의 part. Ready/Blocked/Unchanged 비공개 생성자·비공개 후보 |
+| product_geometry_change_summary.dart | 제품별 참조·유지/대응/신규/제거·결과 입력 ID 순서·내용 변경 경로의 불변 요약 |
+| product_geometry_change_errors.dart | 전용 코드·작은 상세 타입·진단 생성자의 런타임 방어 |
+
+sealing과 비공개 후보 접근을 위해 결과만 준비 library의 part로 둔다.
+다른 책임 파일 전체를 part로 묶지 않았다.
+불변 요청/대응/요약 반복 코드는 Freezed, 준비 함수의 반환값 의도는 meta @useResult로 표현한다.
+새 의존성·JSON 스키마·앱 상태·로그 발생 지점은 없다.
+
+### 준비와 보존의 현행 규칙
+
+- 대상은 request.targets의 productId로 고정한다. 빈 대상/빈 ID/없는 제품/중복 대상은 Blocked다.
+  중복 제품의 모든 요청 항목을 종속 처리에서 제외하며 first/last-wins가 없다.
+- Revise의 source는 기준에 존재하고 각 대상이 참조해야 한다.
+  이전/제안 양쪽 areaId는 동일 업무 영역이라는 호출자의 선언으로 유지한다.
+  유지 원문·줄·입력 상대 순서는 바꾸지 않으며 mapping/제거/신규 공급으로 덮어쓰면 거부한다.
+- Replace에는 자동 유지가 없다. 같은 문자열도 이전 입력 처리와 새 영역 공급을 명시해야 한다.
+- 모든 이전 입력은 유지/대응/개별 제거 중 정확히 하나, 새 정의는 유지/대응/신규 공급 중 정확히 하나다.
+  입력은 이전 상대 순서로 전달하고 신규 입력만 요청 순서로 뒤에 붙인다.
+  mapping은 areaId만 교체하며 원문/Unicode/지정 한 줄·여러 줄을 보존한다.
+- 동일 종류 선택의 중복과 서로 다른 종류의 충돌을 구분한다.
+  모호한 공급이 이미 지목한 새 영역에는 종속 missingAreaInput을 추가하지 않는다.
+  같은 제품의 다른 미공급 영역/미대응 입력 및 다른 제품의 독립 오류는 계속 수집한다.
+  미정의/중복 신규 입력은 기존 validateTextAreaInputs 진단을 한 번만 전달한다.
+- 모든 기존 스냅샷 값/순서와 비대상 제품/제품 순서를 유지한다.
+  새 제안 ID는 하나만 뒤에 추가하고 같은 ID·전체 내용은 기존 슬롯을 재사용한다.
+  같은 ID·다른 내용은 거부하며 다른 ID의 동일 내용을 병합하지 않는다. 미사용 이전 스냅샷도 보존한다.
+- 기존 내용 비교의 내부 경로 수집 책임만 공유했다. 무효한 임시 PDC로 기존 비교 API를 호출하지 않는다.
+- 독립 진단이 있으면 Blocked이며 부분 후보 구성을 반환하지 않는다.
+  문제가 없는 전체 목록에 validateProductDesignConfiguration을 호출한 뒤 검증 생성자로 후보를 만든다.
+  후보 전체 값이 baseline과 같을 때만 Unchanged, 다르면 Ready다.
+
+### 결과와 요약
+
+세 결과 모두 baseline/request/summary를 제공한다. targetProductIds는 원래 명시 ID의 수정 불가 집합 뷰다.
+ReadyProductGeometryChange는 비공개 생성자와 비공개 _candidate만 가지며 candidate getter/copyWith/JSON API가 없다.
+후보를 읽기 위해 테스트용 공개 API를 추가하지 않았다.
+원문 보존은 실제 준비가 쓰는 내부 입력 투영 책임을 테스트하고, 공개 결과는 타입·요약·기준 불변성을 검증한다.
+Blocked의 요약은 유일하게 해석된 제품만 포함하므로 부분적이며, 해당 일부가 반영되었다는 뜻이 아니다.
+Unchanged도 유효한 요청에 한정된다. 불완전한 Replace를 값이 비슷하다는 이유로 무변경 처리하지 않는다.
+
+ProductGeometryTargetSummary는 productId, previousAppliedGeometryId, proposedAppliedGeometryId,
+retainedAreaIds, areaMappings, newInputAreaIds, removedInputAreaIds, resultingInputAreaIds, changedFieldPaths를 제공한다.
+제품 요약은 baseline 제품 순서이며 영역 처리는 실제 입력 상대 순서/신규 요청 순서다.
+changedFieldPaths는 이전/제안 스냅샷의 내용 경로이며 적용 ID 변경은 두 ID 필드로 구분한다.
+원문·전체 JSON·형상 덤프가 아니며 로그에 자동 기록하지 않는다.
+
+### 진단 위치와 처리
+
+전용 ProductGeometryChangeCode의 각 항목은 발생 조건·호출자 대응을 한국어 API 설명에 명시한다.
+ProductGeometryChangeIssue는 code/fieldPath/details가 필수이며 코드별 허용 상세·위치 문법·문맥을 런타임 검사한다.
+진단 API 오용은 ArgumentError.value다. 업무 함수에서 Error를 잡아 Blocked로 바꾸지 않는다.
+인덱스는 0 기반이며 독립 issue 순서는 계약이 아니다.
+
+| 진단 위치 | 의미 |
+|---|---|
+| request.targets[r].productId | 없는/빈/중복 명시 대상 |
+| request.sourceAppliedGeometryId | 부분 수정의 없는/빈 기준 |
+| baseline.products[i].appliedGeometryId | Revise 기대 참조와 실제 참조의 차이 |
+| request.proposedGeometry | 같은 ID의 내용 충돌. baselineIndex와 실제 변경 필드 경로 보존 |
+| request.targets[r].areaMappings[j].fromAreaId / toAreaId | 이전/새 영역 문맥의 미존재·중복·유지/공급 충돌 |
+| request.targets[r].removedInputAreaIds[j] | 개별 제거의 미존재·중복·유지 충돌 |
+| baseline.products[i].textInputs[j].areaId | 처리 선택이 없는 이전 입력 |
+| request.targets[r].newTextInputs[j].areaId | 신규 입력의 기존 연결 진단 |
+| request.proposedGeometry.geometry.textAreas[k].areaId | 독립적으로 공급이 없는 새 정의 |
+| candidate 다음의 실제 구성 경로 | 전체 목록 검증의 원래 ProductDesignIssue |
+
+ChangeAreaSelectionDetails는 제품/양쪽 적용 ID·areaId·source/target 문맥·선택 위치 목록을 제공한다.
+ChangeAreaInputDetails는 원래 DesignValidationIssue 객체/코드/상대 경로/상세를 보존한다.
+ChangeConfigurationDetails도 원래 ProductDesignIssue를 보존한다.
+선택 상세·스냅샷 변경 경로·issue/요약 목록은 외부 수정이 불가능하다.
+상세에 원문/전체 요청·구성/JSON을 복제하지 않는다.
+
+예: 중복 대응은 duplicateSourceMapping/duplicateTargetMapping으로 다루며 해당 선택 위치 목록을 확인한다.
+UI 메시지·재시도·로그 기록은 앱의 실제 처리 경계 책임이며 이번에 앱에 연결하지 않았다.
+
+### 현재 보장하지 않는 것과 다음 작업
+
+Ready는 해당 baseline에서 유효한 준비만 뜻한다. 현재 구성 교체·최신 상태 재확인·세션 개정은 없다.
+최종 apply, WorkSession/세션 ID/revision/이력, A→B→A/과거 ID 재사용 감지,
+결과/확인 무효화 실행, 배치·간섭·제작·저장·동기화·UI·로그는 미구현이다.
+다음 한 가지 작업은 **최종 반영 경계와 세션 개정 연결의 설계**다.
+
+### 구현 검증 기록 (2026-10-28)
+
+고정 SDK의 전체 verify가 생성 시작 일치/반복 안정성·포맷·분석(No issues)·
+공식 문서 dry-run(경고 0/오류 0)·전체 549개 테스트를 통과했다.
+기존 7개와 신규 준비 검사 1개의 assert 비활성 AOT 및 생성기 없는 소비자 컴파일/실행도 통과했다.
+공개 소비자 예제는 실제 prepareProductGeometryChange를 호출하며 기준이 바뀌지 않음을 확인한다.
+별도 격리 소비자 분석에서 Ready의 기본 생성자/copyWith/candidate getter 및 요청 toJson 부재가
+각각 컴파일 오류로 확인되었다. 의도적 오류 코드는 .tooling의 격리 자료에만 있다.
+초기 전체 검증은 신규 AOT 검사 소스의 중괄호 lint 3건으로 중단됐다. 이를 수정한 후의 최종 전체 실행을 성공으로 기록한다.
+원격 CI·다른 OS·앱 연결·최종 반영·세션 개정은 실행/구현하지 않았다.
+
+targetProductIds는 원래 요청 ID의 집합 뷰이므로 Blocked에서도 올바른 대상이 확정됐다는 판정이 아니다.
+중복/빈 ID 원본은 request.targets에 그대로 남고 issue로 처리한다. 뷰가 진단을 대신하지 않는다.
+새 파일 단독 실행도 요청 3개·전체 준비 13개·입력 투영 19개·진단 12개가 각각 통과했다.
