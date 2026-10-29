@@ -1,6 +1,6 @@
 # r_edit_workflow
 
-현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집·현재 참조와 [변경 요청/전체 후보 준비](docs/product-design-change.md#13-요청영역-입력-대응전체-후보-준비-구현-2026-10-28)를 구현했다. 완전한 제작 도안·작업 파일·최종 반영 기능은 아니다.
+현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집·현재 참조와 [변경 요청/전체 후보 준비](docs/product-design-change.md#13-요청영역-입력-대응전체-후보-준비-구현-2026-10-28)를 구현했다. 편집 세션과 최종 메모리 반영은 [현행 세션 계약](docs/product-design-edit-session.md)까지 구현했다. 완전한 제작 도안·작업 파일·저장은 아니다.
 
 현재 기하 값 계약은 [최소 기하 모델](docs/applied-design-geometry.md)이다. 이전 직사각 명판/원형 홀/텍스트 영역 값은 제거했으며, 기하 요소와 업무 역할을 구분한다. 외곽·관통 구멍·텍스트 영역의 [도안 구성과 입력 연결 검증](docs/design-geometry.md)을 구현했다. 전체 제작 조건을 포함한 적용 도안·계산/제작 기능은 아직 없다. 제품 입력/참조 구성은 위 계약 범위로 구현했다.
 
@@ -186,10 +186,22 @@ Flutter 3.47.7/Dart 3.13.5와 기존 Freezed/생성기 기준은 유지한다.
 ProductGeometryChangeRequest는 ReviseAppliedGeometry/ReplaceAppliedGeometry로 구분한다.
 proposedGeometry에는 ID와 실제 내용·선택 출처를 가진 AppliedDesignGeometry를 전달한다.
 제품별 ProductGeometryTarget의 areaMappings/newTextInputs/removedInputAreaIds는 모두 명시한다.
-prepareProductGeometryChange(baseline:, request:)는 정상 거부를 BlockedProductGeometryChange.issues로 수집한다.
+session.prepareGeometryChange(request)는 정상 요청 거부를 BlockedProductGeometryChange.issues로 수집한다.
 완전한 후보가 기준과 같으면 UnchangedProductGeometryChange, 다르면 ReadyProductGeometryChange다.
-Ready 후보/생성자는 비공개이며 임의 copyWith·요청/결과 JSON·최종 apply는 없다.
+Ready 후보/생성자는 비공개이며 임의 copyWith·요청/결과 JSON은 없다. 최종 반영은 session.applyPreparedGeometryChange(Ready)다.
 원문·지정 한 줄·Unicode·입력 상대 순서를 보존하고 신규 입력만 뒤에 붙인다.
 정확한 위치·하위 진단·파일 구성과 한계는 [현행 변경 계약](docs/product-design-change.md)에 있다.
 생성기 없는 공개 소비자 예제는 example/product_configuration.dart의 준비 API 호출을 참고한다.
-다음 작업은 최종 반영 경계와 세션 개정 연결의 설계다.
+현행 세션과 다음 앱 연결 범위는 아래 계약을 따른다.
+## 제품·도안 편집 세션과 최종 반영
+
+ProductDesignEditSession.open(configuration:)으로 단일 정본 소유자를 연다.
+state는 configuration/sessionId/revision/isClosed의 불변 관찰값이며 setter/copyWith/JSON이 없다.
+prepareGeometryChange(request)는 같은 상태에서 기준을 캡처한다. 과거 Ready에 최신 개정을 붙일 수 없다.
+applyPreparedGeometryChange(Ready)는 내부 최신 기준을 검사하고 준비 후보 그대로 채택해 개정을 +1 한다.
+Applied.configuration은 실제 확정 state에서 파생하며, Rejected는 바뀌지 않은 state와 구조화된 issues를 제공한다.
+닫힘/다른 세션을 우선 거부하고 같은 세션의 개정/전체 내용 차이는 독립 진단한다.
+close는 구성/개정을 보존하며 재열기는 새 토큰/개정 0이다.
+이전 공개 prepareProductGeometryChange는 제거했다. 앱·전체 WorkSession·저장/동기화는 추가하지 않았다.
+파일 구성·진단·보장 범위는 [현행 계약](docs/product-design-edit-session.md)의 12절,
+생성기 없는 실행 예제는 example/product_configuration.dart를 따른다.

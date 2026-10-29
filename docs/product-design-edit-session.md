@@ -1,6 +1,8 @@
+> 현행: 12절의 세션 open/prepare/apply/close와 기준 진단을 구현했다. 앱/전체 WorkSession/저장은 미구현이다.
+
 # 제품 도안 편집 세션과 최종 반영 경계 — 설계
 
-작성일: 2026-10-29. **문서 설계이며 아래 새 API·세션 보장은 미구현이다.**
+작성일: 2026-10-29. **현행 구현은 12절이다. 1–11절은 당시 설계 기록이며 채택/구현 결과와 구분한다.**
 현재 구현은 [변경 계약](product-design-change.md) 12·13절의 ID 비교와 요청/전체 후보 준비까지다.
 이 문서는 그 이후의 세션 기준 연결·최종 메모리 반영 추천을 한 곳에 정리한다.
 
@@ -379,3 +381,126 @@ switch (prepared) {
 문서의 로컬 참조는 누락 0건이며 기존 설계의 대체/유지 지점과 호출 흐름을 검토했다.
 Dart 생성·분석·테스트·AOT는 문서 전용 요청에 따라 실행하지 않았다.
 이 문서는 설계용이며 코드·테스트·생성 파일·의존성·앱·SDK·CI는 변경하지 않는다.
+
+## 12. 현행 구현 계약 (2026-10-29)
+
+이 절은 실제 구현이다. 1–11절은 채택 당시 설계와 검증 계획으로 보존하며,
+거기서의 공개 순수 prepare/미구현 세션 표기는 아래 현행 계약과 구분한다.
+
+### 공개 API와 단일 정본
+
+- ProductDesignEditSession.open(configuration:)은 새 비const 발급 토큰과 revision 0을 만든다.
+  토큰은 Object의 발급 인스턴스 동일성으로만 구분한다. 값 동등성·const 재사용·문자열 복원은 없다.
+- session.state는 configuration/sessionId/revision/isClosed의 불변 관찰값이다.
+  세션의 private _state 하나가 정본이다. 외부 setter·상태 설치·copyWith·JSON은 없다.
+- session.prepareGeometryChange(request)는 한 _state에서 ProductDesignEditBasis를 캡처한다.
+  Ready/Blocked/Unchanged 모두 그 basis를 소유하며 baseline은 basis.configuration의 파생 getter다.
+- session.applyPreparedGeometryChange(ReadyProductGeometryChange)는 자신의 최신 정본을 검사한다.
+  외부 current나 최신 revision/basis를 전달받지 않는다.
+- session.close()는 구성/개정·토큰을 유지하고 isClosed만 바꾼다.
+  반복 close는 같은 닫힌 state를 보존한다. 재열기는 새 객체 open이다.
+- 닫힌 객체의 새 prepare는 StateError, 지연 apply는 closedEditSession이다.
+
+기존 공개 prepareProductGeometryChange export/호출을 제거했다. 호환 별칭·공개 순수 Ready 생성 경로는 없다.
+기존 영역 대응 알고리즘은 private _prepareProductGeometryChange로 유지한다.
+request/summary의 Freezed 값·JSON이 있는 기존 업무 모델은 그대로다.
+소유 객체와 생성 제한이 핵심인 state/basis/반영 결과는 작은 final 불변 필드로 작성했다.
+불필요한 값 비교·복사·구성 전체 toString 생성을 추가하지 않았다. meta @useResult는 준비/반영 반환 의도를 나타낸다.
+
+### 동기 최종 반영과 결과
+
+1. 현재 _state를 읽고 수명/세션/개정/전체 구성 기준을 검사한다.
+2. 문제가 있으면 Rejected(state, issues)를 만들고 상태를 건드리지 않는다.
+3. 준비 후보 그대로와 검사된 다음 개정으로 채택 자료를 준비한다.
+4. 새 불변 state와 Applied 결과를 모두 만든 뒤 private _state를 한 번 교체한다.
+5. Applied.state를 반환한다. configuration은 그 state의 파생 getter, summary는 준비 당시 값이다.
+
+이 경계에 await·I/O·listener·콜백·외부 comparator·준비 재계산·로깅은 없다.
+int의 다음 값이 실제 더 크지 않으면 StateError로 채택 전에 중단한다. 임의 상한·순환·리셋은 없다.
+Ready는 검증된 다른 후보만 가질 수 있고, 최신 전체 기준과 같을 때만 반영하므로 수락 시 정확히 +1이다.
+준비·Blocked·Unchanged·폐기·거부는 현재 구성/개정을 바꾸지 않는다.
+Unchanged는 apply 입력 타입이 아니며 과거 baseline을 다시 설치하지 않는다.
+
+AppliedProductGeometryChange / RejectedProductGeometryChange와 state/basis/Ready는
+외부 생성·수정·JSON 경로가 없다. 성공 결과의 실제 전체 configuration은 공개로 읽을 수 있다.
+이는 후보를 준비 단계에서 열어주는 테스트용 getter와 다르다.
+
+### 진단과 내부 책임
+
+전용 ProductGeometryChangeApplicationCode/Issue와 4개 구체 상세 타입을 구현했다.
+코드별 발생 조건·위치·필수 상세·호출자 대응은 한국어 API 설명에 있다.
+- 닫힘이면 closedEditSession만 반환한다.
+- 활성이나 토큰이 다르면 differentEditSession만 반환한다.
+- 같은 활성 토큰이면 staleEditRevision / baselineConfigurationMismatch를 독립 수집한다.
+- 기대/실제 토큰과 개정, current.configuration / prepared.basis.configuration 비교 위치를 제공한다.
+  원문·전체 구성·JSON을 상세에 저장하거나 메시지를 파싱하지 않는다.
+- 상세의 음수/동일 개정 오용, 같은 토큰의 불일치 오용, 코드/상세 조합 및 코드별 위치 오류는
+  ArgumentError.value의 name/invalidValue/message로 런타임 거부한다.
+- 운영 함수는 Error를 catch해 정상 거부로 바꾸지 않는다.
+
+정상 경로로 만들 수 없는 같은 개정/다른 구성과 개정 표현 한계는
+실제 세션이 사용하는 내부 validateProductDesignEditBasis / prepareProductDesignEditCommit 책임을 시험한다.
+이 함수들은 @internal이며 패키지 진입점에 export하지 않는다.
+이를 위한 공개 상태 생성자·setter·개정 주입·테스트용 후보 getter는 없다.
+내부 채택 자료 검사 실패 전에 원래 자료를 교체하지 않는 것도 확인한다.
+
+### 파일과 소비자 예제
+
+| lib/src/product/ 파일 | 역할 |
+|---|---|
+| product_design_edit_session.dart | 세션 library 진입점, 단일 _state와 동기 open/prepare/apply/close |
+| product_design_edit_state.dart | private 생성 state/토큰/Basis, 세션 library의 part |
+| product_geometry_change_preparation.dart | 기존 순수 대응/후보 준비, private 함수 part로 전환 |
+| product_geometry_change_result.dart | 기존 준비 결과와 읽기 전용 basis, 같은 library의 part |
+| product_geometry_change_application.dart | 비공개 생성 Applied/Rejected, 같은 library의 part |
+| product_geometry_change_application_errors.dart | 전용 코드/작은 상세/진단, 독립 library |
+| product_design_edit_validation.dart | 기준 비교/안전한 개정 증가·채택 자료, export하지 않는 내부 책임 |
+
+요청/대응/요약·기하/문구/기존 구성은 part로 묶지 않았다.
+세션의 비공개 기준/후보 접근이 필요한 파일만 같은 Dart library다.
+example/product_configuration.dart와 기존 준비 테스트/AOT 호출을 세션 흐름으로 갱신했다.
+
+~~~dart
+// 현행 API 사용 흐름. 실제 실행 가능한 전체 예제는 example/product_configuration.dart다.
+final session = ProductDesignEditSession.open(configuration: configuration);
+final prepared = session.prepareGeometryChange(request);
+switch (prepared) {
+  case ReadyProductGeometryChange():
+    final result = session.applyPreparedGeometryChange(prepared);
+    switch (result) {
+      case AppliedProductGeometryChange():
+        final acceptedConfiguration = result.configuration;
+        // 전체 확정 값을 소비한다. 별도 current/revision을 정본으로 설치하지 않는다.
+      case RejectedProductGeometryChange():
+        final issues = result.issues;
+    }
+  case BlockedProductGeometryChange():
+    final issues = prepared.issues;
+  case UnchangedProductGeometryChange():
+    // 상태를 교체하지 않는다.
+}
+~~~
+
+앱은 후속 연결 시 세션 수명·활성 작업 선택과 사용자 명령을 소유해야 한다.
+위 단편 자체를 별도 앱 실행/시각 검증 결과로 취급하지 않는다.
+
+### 남은 범위와 다음 작업
+
+현재 보장은 한 isolate의 실행 수명과 메모리 구성 반영이다.
+토큰 전송/직렬화/다른 isolate·동일 파일 중복 열기 판단·여러 프로세스 잠금은 지원하지 않는다.
+전체 WorkSession·앱 연결·저장·동기화·영구 이력·실행 취소·배치 결과 무효화는 없다.
+과거 제거 ID의 전역 재사용 이력도 추적하지 않는다.
+
+다음 한 가지는 **앱에서 작업별 세션 수명과 명시적 사용자 확인/반영을 연결할 최소 계약 설계**다.
+동일 파일 중복 열기/기존 작업 활성화 정책도 앱 경계에서 정하고,
+전체 저장/배치/동기화 기능으로 확대하지 않는다.
+
+### 실제 검증 기록
+
+고정 SDK 전체 verify: 생성 시작 일치/반복 안정성·포맷·분석(No issues)·
+공식 문서 검사 경고 0/오류 0·전체 576개 테스트·assert 비활성 AOT 9개 성공.
+생성기 없는 독립 소비자도 공개 세션 open→prepare→apply로 실제 구성/개정/지정 한 줄을 확인했다.
+개정 표현 한계·같은 개정/다른 구성 방어는 실제 사용하는 내부 책임을 직접 검증했다.
+외부 격리 소비자에서 임의 생성·상태/기준 설치·copyWith·후보 접근·JSON 및 이전 공개 순수 prepare가
+각각 컴파일 진단으로 차단됨을 확인했다. 의도적 오류 소스는 .tooling에만 있다.
+원격 CI/다른 OS·앱 연결·isolate 전송은 실행/지원하지 않는다.

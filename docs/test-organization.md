@@ -115,3 +115,11 @@ Get-ChildItem test -Recurse -Filter '*_test.dart' | ForEach-Object {
 - test/product/text_area_input_change_preparation_test.dart: 실제 준비 내부 입력 투영의 원문/줄/순서·영역 선택 검증.
 - test/product/product_geometry_change_errors_test.dart: 전용 진단의 필수 상세·잘못된 조합·위치·방어.
 비공개 후보를 테스트용 공개 getter로 노출하지 않는다. 공통 준비는 support/product_geometry_changes.dart에 한정한다.
+## 편집 세션·최종 반영 테스트 (2026-10-29)
+
+- product/product_design_edit_session_test.dart: 발급 수명·기준·개정·닫기·경쟁·실제 A→B→A·독립 세션.
+- product/product_geometry_change_application_test.dart: 공개 성공의 실제 전체 구성·스냅샷/비대상/원문/순서/공유.
+- product/product_design_edit_validation_test.dart: 실제 내부 비교 책임의 불가능 상태·개정 표현 한계·부분 채택 방지.
+- product/product_geometry_change_application_errors_test.dart: 전용 진단의 필수 정보·오용 인자·위치·출력.
+기존 준비 테스트의 조건은 유지하고 호출만 세션 prepare로 전환했다.
+공개 테스트 setter/후보 getter 없이 내부 필요 책임만 검증하며 AOT도 같은 책임을 사용한다.

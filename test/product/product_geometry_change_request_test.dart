@@ -57,14 +57,16 @@ void main() {
     expect(modified == request, isFalse);
   });
   test('빈 ID를 가진 미완료 요청은 보존하고 준비에서 정상 거부한다', () {
-    final result = prepareProductGeometryChange(
-      baseline: twoProductsSharingTitleGeometry(),
-      request: ReviseAppliedGeometry(
-        sourceAppliedGeometryId: '',
-        proposedGeometry: appliedMillimeterDesign('next', ['title']),
-        targets: [targetPreservingAreas('')],
-      ),
-    );
+    final result =
+        ProductDesignEditSession.open(
+          configuration: twoProductsSharingTitleGeometry(),
+        ).prepareGeometryChange(
+          ReviseAppliedGeometry(
+            sourceAppliedGeometryId: '',
+            proposedGeometry: appliedMillimeterDesign('next', ['title']),
+            targets: [targetPreservingAreas('')],
+          ),
+        );
     final blocked = result as BlockedProductGeometryChange;
     expect(
       blocked.issues.map((i) => i.code),

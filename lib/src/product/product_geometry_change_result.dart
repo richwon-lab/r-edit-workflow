@@ -1,12 +1,15 @@
-part of 'product_geometry_change_preparation.dart';
+part of 'product_design_edit_session.dart';
 
 /// 특정 불변 baseline에 대한 준비 결과다. 최신 상태의 반영 허가나 저장 결과가 아니다.
 /// 세 구체 결과는 준비 함수만 생성하며 임의 생성/copyWith/JSON 복원은 제공하지 않는다.
 sealed class ProductGeometryChangePreparation {
-  ProductGeometryChangePreparation._(this.baseline, this.request, this.summary);
+  ProductGeometryChangePreparation._(this.basis, this.request, this.summary);
 
   /// 준비 시 캡처한 유효 구성이다. 취소/거부/준비로 변경되지 않는다.
-  final ProductDesignConfiguration baseline;
+  ProductDesignConfiguration get baseline => basis.configuration;
+
+  /// 준비에 사용한 세션·개정·전체 구성의 불변 기준이다.
+  final ProductDesignEditBasis basis;
 
   /// 미완료 선택도 보존하는 원래 불변 요청이다.
   final ProductGeometryChangeRequest request;
@@ -20,11 +23,11 @@ sealed class ProductGeometryChangePreparation {
 }
 
 /// 전체 유효 변경 후보를 비공개로 보관한다. 현재 상태를 자동 교체하지 않는다.
-/// 최종 반영 API는 아직 없으며 이 결과를 최신 상태에도 반영 가능하다고 해석하지 않는다.
+/// 최신 상태에서 수락 가능한지는 세션의 최종 반영 경계가 다시 검사한다.
 final class ReadyProductGeometryChange
     extends ProductGeometryChangePreparation {
   ReadyProductGeometryChange._(
-    super.baseline,
+    super.basis,
     super.request,
     super.summary,
     this._candidate,
@@ -39,7 +42,7 @@ final class ReadyProductGeometryChange
 final class BlockedProductGeometryChange
     extends ProductGeometryChangePreparation {
   BlockedProductGeometryChange._(
-    super.baseline,
+    super.basis,
     super.request,
     super.summary,
     List<ProductGeometryChangeIssue> issues,
@@ -56,6 +59,6 @@ final class BlockedProductGeometryChange
 /// 미완료 대응의 대체 성공이 아니며 현재 구성을 기준으로 되돌리는 동작도 아니다.
 final class UnchangedProductGeometryChange
     extends ProductGeometryChangePreparation {
-  UnchangedProductGeometryChange._(super.baseline, super.request, super.summary)
+  UnchangedProductGeometryChange._(super.basis, super.request, super.summary)
     : super._();
 }

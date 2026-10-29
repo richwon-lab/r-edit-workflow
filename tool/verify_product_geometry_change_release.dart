@@ -38,20 +38,16 @@ void main() {
     targets: targets,
   );
   targets.clear();
-  final prepared = prepareProductGeometryChange(
-    baseline: baseline,
-    request: request,
-  );
+  final prepared = ProductDesignEditSession.open(configuration: baseline)
+      .prepareGeometryChange(request);
   if (prepared is! ReadyProductGeometryChange ||
       prepared.summary.products.single.proposedAppliedGeometryId != 'next' ||
       baseline.products.single.appliedGeometryId != 'old' ||
       request.targets.length != 1) {
     throw StateError('순수 준비/목록 방어 실패');
   }
-  final blocked = prepareProductGeometryChange(
-    baseline: baseline,
-    request: request.copyWith(targets: []),
-  );
+  final blocked = ProductDesignEditSession.open(configuration: baseline)
+      .prepareGeometryChange(request.copyWith(targets: []));
   if (blocked is! BlockedProductGeometryChange ||
       blocked.issues.single.code != ProductGeometryChangeCode.emptyTargetSet) {
     throw StateError('정상 요청 거부 실패');

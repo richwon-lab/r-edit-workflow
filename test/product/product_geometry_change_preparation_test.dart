@@ -18,10 +18,9 @@ void main() {
   test('공유 도안의 한 제품만 준비하며 비대상과 기준 값은 보존한다', () {
     final before = baseline.toJson();
     final request = revise();
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: request,
-    ) as ReadyProductGeometryChange;
+    final result = ProductDesignEditSession.open(
+      configuration: baseline,
+    ).prepareGeometryChange(request) as ReadyProductGeometryChange;
     expect(result.baseline, same(baseline));
     expect(result.request, same(request));
     expect(result.targetProductIds, {'p1'});
@@ -36,12 +35,17 @@ void main() {
     expect(() => result.targetProductIds.add('p2'), throwsUnsupportedError);
   });
   test('명시 복수 대상은 제안 ID 하나를 공유하고 기준 제품 순서로 요약한다', () {
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(
-        targets: [targetPreservingAreas('p2'), targetPreservingAreas('p1')],
-      ),
-    ) as ReadyProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(
+                  revise(
+                    targets: [
+                      targetPreservingAreas('p2'),
+                      targetPreservingAreas('p1'),
+                    ],
+                  ),
+                )
+            as ReadyProductGeometryChange;
     expect(result.summary.products.map((s) => s.productId), ['p1', 'p2']);
     expect(result.summary.products.map((s) => s.proposedAppliedGeometryId), [
       'next',
@@ -50,16 +54,15 @@ void main() {
     expect(baseline.appliedGeometries.map((g) => g.appliedGeometryId), ['old']);
   });
   test('같은 기존 ID와 동등한 내용은 유효 무변경으로 준비한다', () {
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(id: 'old'),
-    );
+    final result = ProductDesignEditSession.open(configuration: baseline)
+        .prepareGeometryChange(revise(id: 'old'));
     expect(result, isA<UnchangedProductGeometryChange>());
     expect(result.summary.products.single.proposedAppliedGeometryId, 'old');
   });
   test('동일한 내용에도 새 ID를 명시하면 참조 변경을 존중한다', () {
     expect(
-      prepareProductGeometryChange(baseline: baseline, request: revise()),
+      ProductDesignEditSession.open(configuration: baseline)
+          .prepareGeometryChange(revise()),
       isA<ReadyProductGeometryChange>(),
     );
   });
@@ -70,10 +73,8 @@ void main() {
         appliedMillimeterDesign('next', ['title']),
       ],
     );
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(),
-    );
+    final result = ProductDesignEditSession.open(configuration: baseline)
+        .prepareGeometryChange(revise());
     expect(result, isA<ReadyProductGeometryChange>());
     expect(result.baseline.appliedGeometries.length, 2);
   });
@@ -85,14 +86,16 @@ void main() {
         outline: CircleBoundary(center: Point2(x: 0, y: 0), radius: 31),
       ),
     );
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: ReviseAppliedGeometry(
-        sourceAppliedGeometryId: 'old',
-        proposedGeometry: proposed,
-        targets: [targetPreservingAreas('p1')],
-      ),
-    ) as BlockedProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(
+                  ReviseAppliedGeometry(
+                    sourceAppliedGeometryId: 'old',
+                    proposedGeometry: proposed,
+                    targets: [targetPreservingAreas('p1')],
+                  ),
+                )
+            as BlockedProductGeometryChange;
     final issue = result.issues.single;
     expect(issue.code, ProductGeometryChangeCode.snapshotContentConflict);
     expect(issue.fieldPath, 'request.proposedGeometry');
@@ -102,24 +105,26 @@ void main() {
     expect(details.changedFieldPaths, ['geometry.outline.radius']);
   });
   test('빈 대상은 내용이 같아도 무변경이 아니라 정상 거부다', () {
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(id: 'old', targets: []),
-    ) as BlockedProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(revise(id: 'old', targets: []))
+            as BlockedProductGeometryChange;
     expect(result.issues.single.code, ProductGeometryChangeCode.emptyTargetSet);
     expect(result.issues.single.fieldPath, 'request.targets');
   });
   test('중복 대상은 어느 대응도 선택하지 않으며 없는 제품을 독립 보고한다', () {
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(
-        targets: [
-          targetPreservingAreas('p1'),
-          targetPreservingAreas('p1'),
-          targetPreservingAreas('absent'),
-        ],
-      ),
-    ) as BlockedProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(
+                  revise(
+                    targets: [
+                      targetPreservingAreas('p1'),
+                      targetPreservingAreas('p1'),
+                      targetPreservingAreas('absent'),
+                    ],
+                  ),
+                )
+            as BlockedProductGeometryChange;
     expect(
       result.issues.map((i) => i.code),
       unorderedEquals([
@@ -140,14 +145,16 @@ void main() {
     expect(duplicate.targetIndices, [0, 1]);
   });
   test('없는 부분 수정 기준은 종속 영역 누락으로 오진하지 않는다', () {
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: ReviseAppliedGeometry(
-        sourceAppliedGeometryId: 'absent',
-        proposedGeometry: appliedMillimeterDesign('next', ['new']),
-        targets: [targetPreservingAreas('p1')],
-      ),
-    ) as BlockedProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(
+                  ReviseAppliedGeometry(
+                    sourceAppliedGeometryId: 'absent',
+                    proposedGeometry: appliedMillimeterDesign('next', ['new']),
+                    targets: [targetPreservingAreas('p1')],
+                  ),
+                )
+            as BlockedProductGeometryChange;
     expect(
       result.issues.single.code,
       ProductGeometryChangeCode.unknownSourceAppliedGeometry,
@@ -164,10 +171,12 @@ void main() {
         baseline.products.last.copyWith(appliedGeometryId: 'other'),
       ],
     );
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(targets: [targetPreservingAreas('p2')]),
-    ) as BlockedProductGeometryChange;
+    final result =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(
+                  revise(targets: [targetPreservingAreas('p2')]),
+                )
+            as BlockedProductGeometryChange;
     expect(
       result.issues.single.fieldPath,
       'baseline.products[1].appliedGeometryId',
@@ -188,26 +197,26 @@ void main() {
         baseline.products.last.copyWith(appliedGeometryId: 'other'),
       ],
     );
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: ReplaceAppliedGeometry(
-        proposedGeometry: appliedMillimeterDesign('next', ['heading']),
-        targets: [
-          for (final id in ['p1', 'p2'])
-            ProductGeometryTarget(
-              productId: id,
-              areaMappings: [
-                const TextAreaInputMapping(
-                  fromAreaId: 'title',
-                  toAreaId: 'heading',
+    final result = ProductDesignEditSession.open(configuration: baseline)
+        .prepareGeometryChange(
+          ReplaceAppliedGeometry(
+            proposedGeometry: appliedMillimeterDesign('next', ['heading']),
+            targets: [
+              for (final id in ['p1', 'p2'])
+                ProductGeometryTarget(
+                  productId: id,
+                  areaMappings: [
+                    const TextAreaInputMapping(
+                      fromAreaId: 'title',
+                      toAreaId: 'heading',
+                    ),
+                  ],
+                  newTextInputs: [],
+                  removedInputAreaIds: [],
                 ),
-              ],
-              newTextInputs: [],
-              removedInputAreaIds: [],
-            ),
-        ],
-      ),
-    );
+            ],
+          ),
+        );
     expect(result, isA<ReadyProductGeometryChange>());
     expect(result.summary.products.map((s) => s.previousAppliedGeometryId), [
       'old',
@@ -230,10 +239,9 @@ void main() {
         targetPreservingAreas('p2'),
       ],
     );
-    final result = prepareProductGeometryChange(
-      baseline: baseline,
-      request: request,
-    ) as BlockedProductGeometryChange;
+    final result = ProductDesignEditSession.open(
+      configuration: baseline,
+    ).prepareGeometryChange(request) as BlockedProductGeometryChange;
     expect(
       result.issues
           .where((i) => i.details is ChangeAreaInputDetails)
@@ -253,14 +261,10 @@ void main() {
   test('반복 준비·거부와 요약 외부 변경은 기준/요청에 영향을 주지 않는다', () {
     final request = revise();
     final before = baseline.toJson();
-    final a = prepareProductGeometryChange(
-      baseline: baseline,
-      request: request,
-    );
-    final b = prepareProductGeometryChange(
-      baseline: baseline,
-      request: request,
-    );
+    final a = ProductDesignEditSession.open(configuration: baseline)
+        .prepareGeometryChange(request);
+    final b = ProductDesignEditSession.open(configuration: baseline)
+        .prepareGeometryChange(request);
     expect(a.summary, b.summary);
     expect(() => a.summary.products.clear(), throwsUnsupportedError);
     expect(
@@ -271,10 +275,10 @@ void main() {
       () => a.summary.products.single.resultingInputAreaIds.clear(),
       throwsUnsupportedError,
     );
-    final blocked = prepareProductGeometryChange(
-      baseline: baseline,
-      request: revise(targets: []),
-    ) as BlockedProductGeometryChange;
+    final blocked =
+        ProductDesignEditSession.open(configuration: baseline)
+                .prepareGeometryChange(revise(targets: []))
+            as BlockedProductGeometryChange;
     expect(() => blocked.issues.clear(), throwsUnsupportedError);
     expect(baseline.toJson(), before);
     expect(request.targets.single.productId, 'p1');

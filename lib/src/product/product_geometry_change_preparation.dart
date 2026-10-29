@@ -1,24 +1,15 @@
-import 'package:meta/meta.dart';
-import 'package:r_edit_workflow/src/product/applied_geometry_id_consistency.dart';
-import 'package:r_edit_workflow/src/product/product_design_configuration.dart';
-import 'package:r_edit_workflow/src/product/product_design_validation.dart';
-import 'package:r_edit_workflow/src/product/product_geometry_change_errors.dart';
-import 'package:r_edit_workflow/src/product/product_geometry_change_request.dart';
-import 'package:r_edit_workflow/src/product/product_geometry_change_summary.dart';
-import 'package:r_edit_workflow/src/product/product_input.dart';
-import 'package:r_edit_workflow/src/product/text_area_input_change_preparation.dart';
-
-part 'product_geometry_change_result.dart';
+part of 'product_design_edit_session.dart';
 
 /// 기준 값을 변경하지 않고 명시 대상·입력 대응을 검사해 전체 후보를 준비한다.
 /// 정상 거부는 Blocked, 유효한 전체 값이 같으면 Unchanged, 다르면 Ready다.
 /// 현재 상태 반영/세션 개정/과거 ID 재사용/배치·제작·저장 판정은 하지 않는다.
 /// Error를 정상 거부로 바꾸거나 로깅하지 않는다. 모든 인덱스는 0 기반이다.
 @useResult
-ProductGeometryChangePreparation prepareProductGeometryChange({
-  required ProductDesignConfiguration baseline,
+ProductGeometryChangePreparation _prepareProductGeometryChange({
+  required ProductDesignEditBasis basis,
   required ProductGeometryChangeRequest request,
 }) {
+  final baseline = basis.configuration;
   final issues = <ProductGeometryChangeIssue>[];
   final summaries = <ProductGeometryTargetSummary>[];
   final proposed = request.proposedGeometry;
@@ -183,14 +174,14 @@ ProductGeometryChangePreparation prepareProductGeometryChange({
   }
   final summary = ProductGeometryChangeSummary(products: summaries);
   if (issues.isNotEmpty) {
-    return BlockedProductGeometryChange._(baseline, request, summary, issues);
+    return BlockedProductGeometryChange._(basis, request, summary, issues);
   }
   final configurationIssues = validateProductDesignConfiguration(
     appliedGeometries: snapshots,
     products: products,
   );
   if (configurationIssues.isNotEmpty) {
-    return BlockedProductGeometryChange._(baseline, request, summary, [
+    return BlockedProductGeometryChange._(basis, request, summary, [
       for (final cause in configurationIssues)
         ProductGeometryChangeIssue(
           code: ProductGeometryChangeCode.candidateConfigurationInvalid,
@@ -205,7 +196,7 @@ ProductGeometryChangePreparation prepareProductGeometryChange({
     products: products,
   );
   if (candidate == baseline) {
-    return UnchangedProductGeometryChange._(baseline, request, summary);
+    return UnchangedProductGeometryChange._(basis, request, summary);
   }
-  return ReadyProductGeometryChange._(baseline, request, summary, candidate);
+  return ReadyProductGeometryChange._(basis, request, summary, candidate);
 }

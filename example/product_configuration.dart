@@ -87,9 +87,9 @@ void main() {
       conflicts.single.changedFieldPaths.single != 'geometry.outline.radius') {
     throw StateError('소비자 공통 ID 내용 비교 실패');
   }
-  final prepared = prepareProductGeometryChange(
-    baseline: configuration,
-    request: ReviseAppliedGeometry(
+  final session = ProductDesignEditSession.open(configuration: configuration);
+  final prepared = session.prepareGeometryChange(
+    ReviseAppliedGeometry(
       sourceAppliedGeometryId: applied.appliedGeometryId,
       proposedGeometry: AppliedDesignGeometry(
         appliedGeometryId: 'geometry-2',
@@ -113,6 +113,24 @@ void main() {
           summary.products.single.proposedAppliedGeometryId != 'geometry-2') {
         throw StateError('소비자 준비 요약 불일치');
       }
+      final result = session.applyPreparedGeometryChange(prepared);
+      switch (result) {
+        case AppliedProductGeometryChange(:final configuration, :final state):
+          if (state.revision != 1 ||
+              configuration.appliedGeometries.length != 2 ||
+              configuration.products.single.appliedGeometryId != 'geometry-2' ||
+              configuration.products.single.textInputs.single.sourceText !=
+                  ' PUMP A ' ||
+              (configuration.products.single.textInputs.single.lineBreak
+                          as SpecifiedLineBreak)
+                      .lines
+                      .single !=
+                  ' PUMP A ') {
+            throw StateError('소비자 실제 반영 구성 불일치');
+          }
+        case RejectedProductGeometryChange():
+          throw StateError('최신 소비자 준비가 반영되지 않음');
+      }
     case BlockedProductGeometryChange():
       throw StateError('유효한 소비자 변경 요청이 거부됨');
     case UnchangedProductGeometryChange():
@@ -122,5 +140,5 @@ void main() {
   if (configuration.products.single.appliedGeometryId != 'geometry-1') {
     throw StateError('준비가 기준을 변경함');
   }
-  stdout.writeln('제품 참조·지정 한 줄·구조화 진단·공통 ID 비교·도안 변경 준비 확인');
+  stdout.writeln('제품 참조·지정 한 줄·구조화 진단·공통 ID 비교·도안 변경 준비·세션 최종 반영 확인');
 }

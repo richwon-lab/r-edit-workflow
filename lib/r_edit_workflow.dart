@@ -48,6 +48,19 @@ export 'src/product/applied_geometry_id_consistency.dart'
     show validateAppliedGeometryIdConsistency;
 export 'src/product/product_design_configuration.dart'
     show ProductDesignConfiguration;
+export 'src/product/product_design_edit_session.dart'
+    show
+        AppliedProductGeometryChange,
+        BlockedProductGeometryChange,
+        ProductDesignEditBasis,
+        ProductDesignEditSession,
+        ProductDesignEditSessionId,
+        ProductDesignEditState,
+        ProductGeometryChangeApplication,
+        ProductGeometryChangePreparation,
+        ReadyProductGeometryChange,
+        RejectedProductGeometryChange,
+        UnchangedProductGeometryChange;
 export 'src/product/product_design_errors.dart'
     show
         ProductDesignAreaDetails,
@@ -62,6 +75,15 @@ export 'src/product/product_design_errors.dart'
         ProductDesignValidationException;
 export 'src/product/product_design_validation.dart'
     show validateProductDesignConfiguration;
+export 'src/product/product_geometry_change_application_errors.dart'
+    show
+        ClosedEditSessionDetails,
+        EditBaselineMismatchDetails,
+        EditRevisionMismatchDetails,
+        EditSessionMismatchDetails,
+        ProductGeometryChangeApplicationCode,
+        ProductGeometryChangeApplicationDetails,
+        ProductGeometryChangeApplicationIssue;
 export 'src/product/product_geometry_change_errors.dart'
     show
         ChangeAppliedReferenceDetails,
@@ -78,13 +100,6 @@ export 'src/product/product_geometry_change_errors.dart'
         ProductGeometryChangeCode,
         ProductGeometryChangeDetails,
         ProductGeometryChangeIssue;
-export 'src/product/product_geometry_change_preparation.dart'
-    show
-        BlockedProductGeometryChange,
-        ProductGeometryChangePreparation,
-        ReadyProductGeometryChange,
-        UnchangedProductGeometryChange,
-        prepareProductGeometryChange;
 export 'src/product/product_geometry_change_request.dart'
     show
         ProductGeometryChangeRequest,
