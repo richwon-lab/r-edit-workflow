@@ -184,3 +184,67 @@ tool/api_documentation.dart가 같은 공식 dry-run의 모든 warning/error 진
 
 새 생성 소스는 Git 포함 대상이다. 이번 작업은 stage하지 않으므로 사용자가 이후 커밋할 때
 라우트 및 지역화 생성 파일을 함께 포함해야 한다. 미커밋 상태의 실제 작업 트리를 CI 성공으로 보고하지 않는다.
+## Windows 고정 SDK의 Git 메타데이터 소비 (2026-11-01)
+
+현재 Windows Git 소비를 위해 **이 패키지 pubspec.yaml의 메타데이터·주석은 ASCII로 유지한다.**
+파일 저장은 UTF-8(BOM 없음)·LF다. 한국어 코드·API 주석·문서·업무 데이터에는 이 제한을 적용하지 않는다.
+설명은 작업 데이터·변경 영향·결과 확인·저장/출력 흐름이라는 목적을 유지한 영문으로 변경했다.
+이 설명이 저장/출력 기능의 구현 완료를 뜻하지는 않는다.
+이름·버전·SDK 제약·의존성·업무 코드·생성 소스는 변경하지 않았다.
+
+### 실패 근거와 고정 pub 구현
+
+Flutter 3.47.7(프레임워크 abaf9c523780a608bd46686fd5e53740a07077f8), Dart 3.13.5를 유지했다.
+설치 SDK의 revision 파일은 04bcd1036cdc799ac6564988f159ee454d42c822이다.
+이 [SDK DEPS](https://github.com/dart-lang/sdk/blob/04bcd1036cdc799ac6564988f159ee454d42c822/DEPS)에 고정된
+pub revision은 ec276d10a7fa0f6c6ec005340fb9ad29f3b012d0이다.
+해당 [Git 실행 코드](https://github.com/dart-lang/pub/blob/ec276d10a7fa0f6c6ec005340fb9ad29f3b012d0/lib/src/git.dart)의
+기본 stdoutEncoding은 systemEncoding이며,
+[Git source 코드](https://github.com/dart-lang/pub/blob/ec276d10a7fa0f6c6ec005340fb9ad29f3b012d0/lib/src/source/git.dart)는
+pubspec을 git show로 읽을 때 이를 별도 UTF-8로 지정하지 않는다.
+이것은 설치 바이너리를 패치하거나 내부 코드를 추출한 검사가 아니라, 설치 revision→DEPS→고정 소스 대조다.
+이전 조사에서 본 pub master는 비교 자료이며 고정 SDK의 포함 구현이라는 근거로 사용하지 않는다.
+
+원격 기존 SHA 6213a211095ba6fc869d42abcfce542c986ca217은 실제 fetch되지만,
+이 Windows 환경의 새 PUB_CACHE에서도 dart pub get --verbose가 exit 65로 실패했다.
+오류는 `Error on line 20, column 1: Unexpected end of file.`이다.
+같은 git show 출력을 고정 Dart Process.run으로 비교하면 원래 한국어 description의 따옴표는
+UTF-8에서 2개/닫힘 정상, systemEncoding에서 1개/닫힘 손실이었다.
+이는 이 Windows 환경에서 재현한 결과이며 모든 Windows 코드 페이지의 실패를 뜻하지 않는다.
+pubspec의 비ASCII 내용은 description 한 줄뿐이었으며 이것만 영문으로 변경했다.
+기존 파일의 CRLF 한 곳도 LF로 통일했다. CP949로 재저장하지 않았다.
+
+### 실제 격리 검증
+
+실제 작업 트리의 추적 파일을 복사하고 수정 pubspec을 포함한 임시 Git 저장소에서만 검증 커밋을 만들었다.
+임시 고정 ref는 ba9f7afc9f2b0c66091ab60552f4ef1b8c32e7bc이며 **원격 배포 SHA가 아니다.**
+소비자는 file:// Git URL + 전체 ref를 사용했다. path 의존성·override는 사용하지 않았다.
+기존 원격 SHA 소비자와 수정 임시 SHA 소비자는 각각 새 별도 PUB_CACHE를 사용했다.
+FVM wrapper의 기본 캐시 대입을 피하려고 .fvm/flutter_sdk/bin/cache/dart-sdk/bin/dart.exe를 직접 실행하고,
+PUB_CACHE는 해당 검사 프로세스에만 설정했다. SDK/캐시 패치·전역 Git 설정/코드 페이지 변경은 하지 않았다.
+
+| 검사 | 실제 결과 |
+|---|---|
+| 기존 원격 SHA, 새 캐시 pub get | exit 65, 위 YAML 오류 재현 |
+| 수정 임시 Git SHA, 새 캐시 pub get | exit 0, lock의 source: git 및 ref/resolved-ref 일치 |
+| 수정 Git blob의 전체 문자열 | UTF-8/systemEncoding 결과가 실제 수정 파일과 정확히 일치 |
+| 실제 수정 pubspec 및 임시 Git blob | ASCII만 포함, 유효 UTF-8·BOM 없음·CR 없음(LF) |
+| pub 캐시 checkout 내용 | 설명과 모든 메타데이터 무손실. 기존 Git checkout 설정에 의해 CRLF 19개이며 캐시를 수정하지 않음 |
+| 생성기 없는 소비자 | build_runner/freezed/json_serializable 없음, 기존 example/product_configuration.dart를 AOT 컴파일·실행 성공 |
+| 실제 세션 소비 | open→prepare→apply, 개정 1·새 스냅샷 참조·원문/직접 지정 한 줄 보존 확인 |
+| 실제 workflow 전체 verify | 시작 생성 일치·반복 안정성·포맷·분석 성공, 문서 경고/오류 0, 테스트 576개·AOT 9개·기존 독립 소비자 성공 |
+
+캐시 내용 검사의 줄바꿈 구분은 메타데이터 무손실 확인용이다.
+기존 생성 파일 바이트 검사를 완화하거나 정규화한 것이 아니다.
+격리 증거는 검사한 앱 checkout의 .tooling/ascii-git-consumption/ 아래 old-pub-get.log,
+fixed-pub-get.log, fixed/pubspec.lock, metadata_probe.dart와 fixed/consumer.exe에 남겼다.
+이는 로컬 임시 증거이며 라이브러리 소비에 형제 앱이나 이 경로를 요구하지 않는다.
+
+### 게시 후 앱 연결 절차
+
+1. 사용자가 실제 workflow의 이 수정과 기록을 검토·커밋·원격 게시한다. 이번 작업은 stage/commit/push하지 않는다.
+2. 게시된 실제 전체 SHA를 원격에서 새 fetch하여 메타데이터·세션 API·생성 소스를 다시 확인한다.
+3. 앱 pubspec에 그 실제 SHA를 고정하고 앱 lock을 갱신한다. 임시 검증 SHA나 브랜치 최신값으로 대신하지 않는다.
+4. override 없이 Windows pub get 및 독립 checkout 검증 후 등록·소유/활성화·준비·확인/취소·관찰 통지·close Provider 구현을 이어간다.
+
+수정본의 원격 GitHub 소비는 아직 게시되지 않아 미검증이다. 앱 의존성/Provider·SDK·CI는 변경하지 않았다.
