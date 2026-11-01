@@ -1,3 +1,5 @@
+> 현행 부분 근거(2026-11-01): [형상·문구 추출/대조](docs/saved-layout-consistency.md#13-형상문구-부분-근거-구현-2026-11-01)를 구현했다. 전체 배치 입력·결과 현재성·확인·저장 판단은 아니다. 영역 재정렬은 ID별 내용으로 비교하며 JSON/문자 경계 검증은 추가하지 않았다.
+
 # r_edit_workflow
 
 현재 제품 입력·적용 형상 값과 참조 구성은 [구현 계약](docs/product-design-configuration.md)에 있다. 독립 오류 수집·현재 참조와 [변경 요청/전체 후보 준비](docs/product-design-change.md#13-요청영역-입력-대응전체-후보-준비-구현-2026-10-28)를 구현했다. 편집 세션과 최종 메모리 반영은 [현행 세션 계약](docs/product-design-edit-session.md)까지 구현했다. 완전한 제작 도안·작업 파일·저장은 아니다.

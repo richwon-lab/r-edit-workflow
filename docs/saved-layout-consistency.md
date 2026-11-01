@@ -1,3 +1,5 @@
+> 현행 구현(2026-11-01): 13절의 형상·문구 부분 근거 추출/대조를 구현했다. 결과/확인/저장 판정은 미구현이다. 문자 경계 검사와 영역 순서에 대해서는 13절 및 최신 사용자 결정을 우선한다.
+
 # 저장 배치 결과·현재 입력 정합성과 결과별 작업자 확인 — 설계
 
 2026-11-01. **설계 문서이며 결과 모델·저장 판단·배치 엔진을 구현한 기록이 아니다.**
@@ -170,8 +172,8 @@ ID는 문서 안의 이름 공간에서 중복을 거부하고, 같은 ID는 같
 후속 위치가 필요하면 UTF-16 코드 단위의 [start, end) 범위를 명시하는 후보를 우선 검토한다.
 0 ≤ start ≤ end ≤ sourceText.length, 순서·빈 구간 허용 범위·겹침/누락, substring 일치를 검사하고
 surrogate pair 중간 경계는 유효 문자 경계로 수락하지 않는 방향을 추천한다.
-줄 조각 분할도 경계 검증을 수행해야 하며, 기존 입력에서 surrogate pair/결합열을 가른 조각이 들어오면
-원문을 수정하지 않고 결과 지원 범위 진단으로 구분한다. 기존 TextAreaInput 허용 조건을 이 문서로 변경하지 않는다.
+이는 후속 결과의 문자 경계 지원 제안이다. 기존 입력에서 surrogate pair/결합열을 가른 조각이 들어오면
+후속 결과 지원 범위에서 어떻게 안내할지 별도 검토한다. 이번 근거 구현은 surrogate pair/grapheme 경계를 검사하거나 입력 허용 조건을 변경하지 않는다.
 
 결합 문자·ZWJ/국기·한글 자모의 grapheme 중간 줄 경계까지 거부할지, 수동 조작에서 어떻게 안내할지는 미정이다.
 숫자 위치가 유효하다는 사실과 실제 줄바꿈이 언어/글리프 단위로 적절하다는 판단을 구분한다.
@@ -363,7 +365,7 @@ GeometryText 이름은 보장하는 부분만 드러낸다. 이 타입에는 미
 불변 하위 값을 공유하고 외부 목록은 방어한다. JSON·문자 offset API·결과/확인·세션 연결은 이 첫 구현에 넣지 않는다.
 
 검토 후 시작 조건은 이 좁은 투영의 비교 의미를 채택하는 것이다.
-- 영역은 areaId로 연결해 입력/정의의 목록 순서가 다르다는 이유로 문구를 바꾸지 않는다.
+- 영역 입력/정의는 각각 areaId로 연결하며 같은 ID 집합과 영역별 내용이면 재정렬만으로 이 근거가 다르다고 하지 않는다. 원본 목록은 정렬/수정하지 않는다.
 - outline 경로 구간과 경계 내부의 순서 있는 목록은 현재 값 의미를 보존한다.
   cutout/exclusion 순서를 실제 계산에서 무시해도 되는지 아직 증명하지 않고 임의 정렬/동등화하지 않는다.
 - 적용 ID/출처와 계산 내용 비교를 구분하며 같은 ID의 내용 충돌은 기존 검증 책임을 유지한다.
@@ -384,3 +386,93 @@ GeometryText 이름은 보장하는 부분만 드러낸다. 이 타입에는 미
 
 문서의 모델 관계·경로·링크·정책을 확인한다. 이번에는 Dart/Flutter 전체 검증·엔진/제작 시험을 실행하지 않는다.
 운영 코드·생성 소스·의존성·SDK·CI·형제 앱을 변경하거나 커밋/푸시/스테이징하지 않는다.
+
+## 13. 형상·문구 부분 근거 구현 (2026-11-01)
+
+### 실제 공개 API
+
+- `AreaGeometryTextBasis(definition:, input:)`: TextAreaDefinition과 TextAreaInput의 areaId를 대조하고
+  region/input만 공유한다. areaId는 input에서 파생한다. label은 보관하지 않는다.
+- `ProductGeometryTextBasis(productId:, coordinateSpace:, outline:, cutouts:, areas:)`:
+  빈 제품 ID·소유 영역/관통 ID 중복을 거부한다. 목록은 방어하며 불변 하위 값은 공유한다.
+- `extractProductGeometryTextBasis(configuration:, productId:)`: 유효 구성에서 해당 제품만 추출한다.
+  새 전체 참조 검증 알고리즘을 만들지 않는다. 대상 없음은 GeometryTextBasisException.unknownProduct,
+  빈 추출 인자는 ArgumentError.value(productId)로 구분한다.
+- `compareProductGeometryTextBasis(previous:, next:)`: 수정 불가 부분 차이 목록을 반환한다.
+  다른 제품은 productMismatch 하나만 반환한다. 빈 목록은 **이 부분의 일치**일 뿐 배치/현재성/저장 판정이 아니다.
+
+GeometryText는 실제로 담은 부분만 드러내므로 후보 이름을 채택했다.
+전체 규칙/측정/그룹을 갖춘 LayoutInput처럼 부르지 않는다. JSON·copyWith·임의 수정 경로를 제공하지 않으며
+수정은 검증 생성자로 새 값을 만든다. 생성 도구는 값 비교/hashCode를 맡고 업무 연결 검사는 직접 작성한다.
+
+영역의 유일 정본은 `areasById: Map<String, AreaGeometryTextBasis>`다.
+이 맵은 명시 영역 ID별 소유 관계이며 임의 메타데이터 Map이 아니다. Freezed의 맵 값 동등성은 삽입 순서와 무관하다.
+`areas`는 맵의 전달 순서로 파생한 수정 불가 목록이다. 다른 영역 순서의 근거라도 값/hashCode는 같을 수 있다.
+진단 인덱스는 각 근거의 areas 관찰 순서를 각각 따른다. 입력 구성의 textInputs/textAreas는 정렬하지 않는다.
+
+cutouts·TextRegion.exclusions·GeometryPath.segments·지정 lines는 순서까지 비교한다.
+단위와 수치는 그대로 비교하며 자동 환산·허용오차·물리적 동등성 추정은 하지 않는다.
+이 규약을 미래 엔진이 모든 순서에 무관하다는 보장으로 확대하지 않는다.
+
+### 문자 경계의 두 문제
+
+surrogate pair 중간은 한 코드 포인트의 UTF-16 표현 내부 경계다.
+grapheme 중간은 결합 문자/ZWJ 등 여러 코드 포인트가 사용자 인식 문자를 이루는 경우의 경계다.
+둘은 같지 않다. 결합 문자·ZWJ 등의 분할 허용 정책은 계속 미정이다.
+이번에는 TextAreaInput을 그대로 공유한다. surrogate/grapheme 경계 검사·정규화·줄 재분할을 하지 않으며,
+이미 허용되는 조각을 이 근거 생성 때문에 거부하지 않는다. 기존 지원 제한도 그대로다.
+
+### 생성 오류와 차이 진단
+
+생성/추출 오류는 GeometryTextBasisException과 전용 code/details다.
+빈 ID, 대상 없음, 영역 정의/입력 불일치, 영역/관통 중복은 각각 구분한다.
+진단 named 생성자가 코드/상세를 고정하고, 상세 ID/인덱스의 잘못된 인자는 ArgumentError.value로 거부한다.
+내부 helper는 공개 진입점에서 export하지 않는다.
+
+차이는 GeometryTextBasisDifferenceCode의 productMismatch/valueChanged/kindChanged/elementAdded/elementRemoved다.
+작은 position 타입 ComparedBasisFields/AddedBasisElement/RemovedBasisElement/ChangedBasisKinds가
+이전/다음의 실제 상대 필드 경로와 종류 변경의 실제 종류를 제공한다.
+원문/전체 형상/구성을 상세에 복제하거나 문자열로 덤프하지 않는다. 진단 순서는 계약이 아니다.
+
+예: 같은 영역 a가 이전 areas[0], 다음 areas[2]에 있고 원문이 바뀌었다면:
+
+```text
+code=valueChanged, previousProductId=p, nextProductId=p, areaId=a
+position.previousFieldPath=areas[0].input.sourceText
+position.nextFieldPath=areas[2].input.sourceText
+```
+
+영역 삭제는 이전 `areas[i]`만, 추가는 다음 `areas[j]`만 가리킨다.
+원→경로는 outline 전체, 선분→원호는 해당 segments[i] 전체를 kindChanged로 가리켜
+한쪽에 없는 radius/bulge 하위 필드가 존재한다고 표시하지 않는다.
+경로 생성자는 현재 근거 필드 문법/영역 ID 필요 여부/상세 조합을 방어하지만,
+외부에서 전달한 진단의 인덱스가 어느 실제 객체 범위에 드는지는 그 객체 없이 검증하지 못한다.
+대조 함수가 자신이 받은 실제 두 값의 위치를 계산한다.
+
+### 파일과 보장 범위
+
+운영 파일은 lib/src/product/ 아래 area_geometry_text_basis.dart, product_geometry_text_basis.dart,
+geometry_text_basis_extraction.dart, geometry_text_basis_comparison.dart, geometry_text_basis_errors.dart,
+geometry_text_basis_differences.dart와 공식 생성 .freezed.dart 2개다.
+책임별 테스트는 test/product의 해당 모델·추출·대조·진단 파일이며 준비 코드만 test/support에서 공유한다.
+
+같은 적용 ID의 전체 내용 불변 검사는 기존 API가 계속 소유한다. 이번 투영과 혼합하지 않았다.
+규칙·측정·제작 조건·그룹·결과·확인·실행 무효화·저장·엔진·파일 I/O는 구현하지 않았다.
+특히 순수 부분 값이 A→B→A로 다시 같아지는 것은 정상이며 실행 현재성이 복구됐다는 뜻이 아니다.
+
+다음 한 가지는 **첫 지원 문구 계산의 글꼴/측정 근거와 글자 크기의 의미 계약 설계**다.
+실제 결과의 크기가 em인지 글리프 높이인지, 같은 모습/재계산에 필요한 자료가 무엇인지 아직 없어
+현재 근거에 이를 추가할 수 없다. 결과/확인/저장 전체를 다음 구현으로 자동 포함하지 않는다.
+
+### 실제 검증 기록
+
+고정 Flutter 3.47.7/Dart 3.13.5의 표준 tool/verify.dart를 실행했다.
+생성 시작 상태/첫 생성 일치·반복 안정성·포맷·strict 분석(No issues)·문서 경고/오류 0,
+전체 616개 테스트·기존 AOT 9개·생성기 없는 독립 소비자 실행이 성공했다.
+새 테스트 파일 단독 실행은 추출 4개·값 8개·대조 12개·진단 16개가 통과했다.
+추출 사례는 미사용 형상 변경 제외와 별도 생성 동등 하위 값까지 보강한 후 다시 단독 분석/실행했다.
+형상·문구 부분의 새 런타임 방어는 기존 제품 구성 AOT 프로그램에서 확인했다.
+외부 격리 소비자에서 copyWith/JSON API/필드 setter 접근은 의도한 컴파일 오류 6개로 거부했다.
+의도적 오류 소스는 무시되는 .tooling에만 남겼다. 운영 코드/예제에는 넣지 않았다.
+문서 상대 경로 누락 0건·git diff --check 통과. 검사 로그는 .tooling/geometry-text-verify-final2.log다.
+앱·기존 세션 동작·SDK·의존성·CI는 변경하지 않았다. 실제 엔진·제작·저장/파일 열기·원격 CI는 미검증이다.

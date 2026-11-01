@@ -46,6 +46,29 @@ export 'src/product/applied_geometry_id_conflict.dart'
     show AppliedGeometryIdConflict, AppliedGeometryIdConflictCode;
 export 'src/product/applied_geometry_id_consistency.dart'
     show validateAppliedGeometryIdConsistency;
+export 'src/product/area_geometry_text_basis.dart' show AreaGeometryTextBasis;
+export 'src/product/geometry_text_basis_comparison.dart'
+    show compareProductGeometryTextBasis;
+export 'src/product/geometry_text_basis_differences.dart'
+    show
+        AddedBasisElement,
+        ChangedBasisKinds,
+        ComparedBasisFields,
+        GeometryTextBasisDifference,
+        GeometryTextBasisDifferenceCode,
+        GeometryTextBasisDifferencePosition,
+        GeometryTextBasisKind,
+        RemovedBasisElement;
+export 'src/product/geometry_text_basis_errors.dart'
+    show
+        BasisAreaInputDetails,
+        BasisDuplicateDetails,
+        BasisIdentifierDetails,
+        GeometryTextBasisErrorCode,
+        GeometryTextBasisErrorDetails,
+        GeometryTextBasisException;
+export 'src/product/geometry_text_basis_extraction.dart'
+    show extractProductGeometryTextBasis;
 export 'src/product/product_design_configuration.dart'
     show ProductDesignConfiguration;
 export 'src/product/product_design_edit_session.dart'
@@ -108,6 +131,8 @@ export 'src/product/product_geometry_change_request.dart'
 export 'src/product/product_geometry_change_summary.dart'
     show ProductGeometryChangeSummary, ProductGeometryTargetSummary;
 export 'src/product/product_geometry_target.dart' show ProductGeometryTarget;
+export 'src/product/product_geometry_text_basis.dart'
+    show ProductGeometryTextBasis;
 export 'src/product/product_input.dart' show ProductInput;
 export 'src/product/text_area_input_mapping.dart' show TextAreaInputMapping;
 export 'src/text_area_input.dart'

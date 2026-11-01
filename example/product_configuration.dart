@@ -44,6 +44,23 @@ void main() {
   if (restored != configuration) {
     throw StateError('소비자 JSON 왕복 불일치');
   }
+  final geometryText = extractProductGeometryTextBasis(
+    configuration: configuration,
+    productId: 'product-1',
+  );
+  final restoredGeometryText = extractProductGeometryTextBasis(
+    configuration: restored,
+    productId: 'product-1',
+  );
+  if (geometryText.areas.single.input.sourceText != ' PUMP A ' ||
+      geometryText != restoredGeometryText ||
+      compareProductGeometryTextBasis(
+        previous: geometryText,
+        next: restoredGeometryText,
+      ).isNotEmpty) {
+    throw StateError('소비자 형상·문구 부분 추출/대조 실패');
+  }
+  // 부분 근거 일치는 전체 배치 입력/결과/저장 판정이 아니다.
   // 소비자는 오류 문자열 대신 공개 타입/필드를 처리한다. 입력 거부를 로깅하지 않는다.
   try {
     TextAreaInput.fromJson({

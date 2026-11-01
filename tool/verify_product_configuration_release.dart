@@ -58,6 +58,7 @@ void main() {
   inputs.clear();
   products.clear();
   snapshots.clear();
+  _verifyGeometryTextBasis(valid);
   final expected = valid.toJson();
   final restored = ProductDesignConfiguration.fromJson(
     jsonDecode(jsonEncode(expected)),
@@ -191,4 +192,104 @@ void main() {
   print(
     '제품 구성 AOT: assert 비활성, 공유·원문·왕복·목록 방어·copyWith 비노출·독립 진단, 오류 $rejected건 통과',
   );
+}
+
+void _verifyGeometryTextBasis(ProductDesignConfiguration configuration) {
+  final basis = extractProductGeometryTextBasis(
+    configuration: configuration,
+    productId: 'p-a',
+  );
+  final reordered = ProductGeometryTextBasis(
+    productId: basis.productId,
+    coordinateSpace: basis.coordinateSpace,
+    outline: basis.outline,
+    cutouts: basis.cutouts,
+    areas: basis.areas.reversed.toList(),
+  );
+  if (basis != reordered ||
+      compareProductGeometryTextBasis(
+        previous: basis,
+        next: reordered,
+      ).isNotEmpty) {
+    throw StateError('AOT 영역 재정렬 비교 실패');
+  }
+  final other = ProductGeometryTextBasis(
+    productId: basis.productId,
+    coordinateSpace: basis.coordinateSpace,
+    outline: CircleBoundary(center: Point2(x: 0, y: 0), radius: 11),
+    cutouts: basis.cutouts,
+    areas: basis.areas,
+  );
+  final differences = compareProductGeometryTextBasis(
+    previous: basis,
+    next: other,
+  );
+  if (differences.single.position.previousFieldPath != 'outline.radius' ||
+      differences.single.code != GeometryTextBasisDifferenceCode.valueChanged) {
+    throw StateError('AOT 실제 차이 위치 실패');
+  }
+  var blocked = 0;
+  try {
+    basis.areasById.clear();
+  } on UnsupportedError {
+    blocked++;
+  }
+  try {
+    differences.clear();
+  } on UnsupportedError {
+    blocked++;
+  }
+  try {
+    final unexpected = extractProductGeometryTextBasis(
+      configuration: configuration,
+      productId: 'missing',
+    );
+    throw StateError('없는 제품을 반환함: ${unexpected.productId}');
+  } on GeometryTextBasisException catch (e) {
+    if (e.code == GeometryTextBasisErrorCode.unknownProduct) blocked++;
+  }
+  try {
+    ProductGeometryTextBasis(
+      productId: '',
+      coordinateSpace: basis.coordinateSpace,
+      outline: basis.outline,
+      cutouts: basis.cutouts,
+      areas: basis.areas,
+    );
+  } on GeometryTextBasisException catch (e) {
+    if (e.code == GeometryTextBasisErrorCode.emptyProductId) blocked++;
+  }
+  try {
+    ProductGeometryTextBasis(
+      productId: basis.productId,
+      coordinateSpace: basis.coordinateSpace,
+      outline: basis.outline,
+      cutouts: basis.cutouts,
+      areas: [basis.areas.first, basis.areas.first],
+    );
+  } on GeometryTextBasisException catch (e) {
+    if (e.code == GeometryTextBasisErrorCode.duplicateAreaId) blocked++;
+  }
+  try {
+    AreaGeometryTextBasis(
+      definition:
+          configuration.appliedGeometries.first.geometry.textAreas.first,
+      input: configuration.products.first.textInputs.first,
+    );
+  } on GeometryTextBasisException catch (e) {
+    if (e.code == GeometryTextBasisErrorCode.areaInputMismatch) blocked++;
+  }
+  try {
+    GeometryTextBasisDifference.value(
+      productId: 'p-a',
+      fields: ComparedBasisFields(
+        previousFieldPath: 'areas[0].input.sourceText',
+        nextFieldPath: 'areas[1].input.sourceText',
+      ),
+    );
+  } on ArgumentError catch (e) {
+    if (e.name == 'areaId') blocked++;
+  }
+  if (blocked != 7) throw StateError('AOT 근거/진단 방어 누락: $blocked');
+  print('형상·문구 부분 AOT: 추출·재정렬 동등성·차이 위치·생성/진단/목록 런타임 방어 확인');
 }
