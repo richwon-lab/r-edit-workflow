@@ -1,6 +1,8 @@
 # 글꼴·측정 근거와 글자 크기 의미 계약 — 설계
 
-검토일 2026-11-01. **글꼴 로딩/파싱/측정/렌더링/엔진/DXF 연결은 구현하지 않았다.**
+검토일 2026-11-01. [최소 probe 부분 실행](font-size-probe.md)에서 설치 후보의 메트릭을 읽었다. 현장 동일성·CAD/Type3·명목↔em은 여전히 미확정이다.
+
+**운영용 글꼴 로딩/파싱/측정/렌더링/엔진/DXF 연결은 구현하지 않았다.** 격리 실험 스크립트와 운영 지원을 구분한다.
 모델·필드·측정 도구 이름은 설계 후보이며 새 공개 API/패키지 채택이 아니다.
 [저장 결과 정합성](saved-layout-consistency.md), [현행 개발 기준](development-foundation.md),
 [기반 보완](development-foundation-additions.md), [실패·로그 계약](failure-diagnostics-logging.md)을 따른다.
@@ -23,7 +25,7 @@ ProductGeometryTextBasis는 기하·문구 부분만 담는다. 이 문서로 �
 위 경로는 형제 앱 docs/ 아래다. font_size_probe 안내가 참조하는 expected.json·font_metrics.json은
 현재 그 package 경로에 없다. 자료 묶음에서 실제 TTF/OTF와 해당 이름의 측정 파일도 찾지 못했다.
 다른 연구 JSON의 glyph 자료가 곧 현재 글꼴 원본·허가·측정 계약·CAD 대응을 증명하지는 않는다.
-이번에는 글꼴 실물/Type3/CAD를 새로 실행하지 않았으며 과거 Python 기록을 새 Dart 검증으로 표시하지 않는다.
+최초 설계 시에는 글꼴 실물/Type3/CAD를 새로 실행하지 않았다. 후속 [부분 probe](font-size-probe.md)는 설치 후보의 메트릭만 읽었으며, 과거 Python 기록을 새 Dart 검증으로 표시하지 않는다.
 
 중요한 기존 기록: 크기 probe 안내는 커터 기준의 사용자 확인을 **CAD/Type3에 표시되는 글자 크기**로 적고 있다.
 이를 '특정 문구의 실제 잉크 높이' 또는 '어떤 글꼴에서도 1 em'이라고 바꾸지 않는다.
@@ -239,7 +241,7 @@ glyph/cluster index와 구분하고 문자열 길이/추출·surrogate pair 경�
 바인딩이 UTF-8 byte cluster를 반환하면 원문을 보존한 명시 변환 자료가 필요하다.
 결합 문자/ZWJ의 분할 정책은 아직 미정이다. 이번 기존 TextAreaInput/ProductGeometryTextBasis에 문자 경계 검증을 추가하지 않는다.
 
-## 9. 필요한 최소 실기 계획 — 이번에 실행하지 않음
+## 9. 필요한 최소 실기 계획
 
 먼저 대표 font 한 종류의 정확한 파일/face·이용 조건, 사용 CAD/Type3 버전·글꼴 매핑,
 명목 크기/자폭 속성값을 확인할 샘플을 확보한다. 전체 작업 파일/실제 고객 원문을 무조건 요구하지 않는다.

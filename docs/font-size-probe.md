@@ -1,0 +1,169 @@
+# 글꼴 크기 최소 probe — 확보 자료와 부분 실행 기록
+
+2026-11-01. [측정 계약](font-measurement-contract.md)의 최소 실기 선행 조사다.
+**원본 글꼴 메트릭 읽기와 조건부 계산만 실행했다. CAD·Type3 실기는 미실행이며 명목 크기↔em은 미확정이다.**
+운영 모델/엔진/글꼴 브리지 채택이나 지원 글꼴 확정 기록이 아니다.
+
+## 1. 실제 자료 확인과 대표 글꼴 선정 상태
+
+- 형제 앱 `docs/development-reference/reference/verification-supplement/req_work/font_size_probe_v01/package/`에는
+  `먼저_읽어주세요.txt`만 있다. 안내가 지칭한 `01_FontSize_Check_R2000.dxf`, `preview.html`,
+  `expected.json`, `font_metrics.json`, `make_probe.py`는 없다. 과거 4.5/3.0 시험을 그대로 재현할 수 없다.
+- 요구사항 텍스트 v0.13에는 HY견고딕의 현장 사용과 과거 Type3 글꼴 연결 문제가 기록되어 있다.
+  특히 후속 파일은 내부 이름 `(리)HY견고딕`과 제공 파일명으로 연결했다는 기록이 있다.
+- Windows의 일반 설치 위치 `C:\Windows\Fonts`와 사용자 `AppData\Local\Microsoft\Windows\Fonts`,
+  글꼴 등록 정보를 읽었다. 디스크 전체 검색은 하지 않았다. 프로젝트 참고 자료에서는 실제 TTF/OTF/TTC를 찾지 못했다.
+- `C:\Windows\Fonts\H2GTRE.TTF`가 실제 존재하고 등록 이름과 파일 내부 이름이 HY견고딕이다.
+  **과거 현장 파일과 동일함을 확인하지 못한 설치 후보**로만 조사했다. HY세고딕/태고딕/특태고딕으로 간주하지 않는다.
+  내부 이름에 `(리)`가 없으며, 이름이 비슷하다는 이유로 과거 파일과 동일성을 인정하지 않는다.
+- HKLM 32/64bit·HKCU Uninstall 등록 및 현재 프로세스에서 AutoCAD/Type3/TypeEdit/ZWCAD/GstarCAD/CADian을
+  확인하지 못했다. 이것은 미등록/portable 설치까지 없다는 증명이 아니다. 실행 경로·정확한 제품/버전은 사용자 확인이 필요하다.
+- 요청한 대표 현장 파일·프로그램 버전 확인 질문을 전달했다. 현재 확인 답변은 확보하지 못했다.
+
+## 2. 읽은 파일의 식별 정보 — 관찰
+
+글꼴은 원래 위치에서 읽기만 했으며 복사·수정·Git 등록·외부 업로드하지 않았다.
+
+| 항목 | 실제 관찰값 |
+|---|---|
+| 파일 / 크기 | H2GTRE.TTF / 3,485,364 bytes |
+| SHA-256 | `820D3212F688B546A327EA43A7202E3379CDBBD767EBAC9753997E3F3D285171` |
+| family / full name | 한국어 HY견고딕, 영어 HYGothic-Extra |
+| face/style | Regular |
+| name ID 5 / head fontRevision | Version 1.00 / 1.0 |
+| PostScript name | H2gtrE |
+| collection | 단독 sfnt, face index 0. TTC가 아님 |
+| unitsPerEm | 1024 font units |
+| hhea ascender / descender / lineGap | 879 / -145 / 152 |
+| OS/2 version | 1 |
+| OS/2 typoAscender / typoDescender / typoLineGap | 879 / -145 / 152 |
+| OS/2 winAscent / winDescent | 879 / 145 |
+| capHeight / xHeight 필드 | OS/2 v1에는 해당 필드 없음. H/x 치수로 필드를 만들어 채우지 않음 |
+| fsType | 0. 이용약관을 검토한 임베딩/윤곽 추출/배포 허가로 해석하지 않음 |
+| CAD·Type3 요청/실제 글꼴·대체 여부 | 미확인 |
+
+head/hhea/OS2/name 테이블은 big-endian 원본 필드를 읽었다. 이름은 Windows Unicode/Unicode name 레코드를
+언어별로 기록했다. 해시는 이 파일의 재식별 근거이며 현장 파일 확보·내용 대조를 대신하지 않는다.
+로컬 읽기와 향후 임베딩/글꼴 수정/윤곽 배포는 별개다. 실제 제공 경로·계약·허용 범위는 확인 필요하다.
+
+## 3. 도구 선택과 실행 범위
+
+새 설치 없이 기존 PowerShell 7.6.9 / .NET 10.0.14 / PresentationCore 10.0.0.0의 WPF GlyphTypeface를 사용했다.
+`GetGlyphOutline(glyphId, renderingEmSize=1024, hintingEmSize=1024)`의 Geometry.Bounds를 읽고,
+WPF의 Y 아래 좌표를 baseline 기준 Y 위 좌표로 변환했다. advance는 AdvanceWidths × unitsPerEm이다.
+raw glyf 헤더 bbox도 별도로 기록했다. 이는 제어점을 포함하는 원본 경계이며 곡선의 실제 극점 경계와 다를 수 있다.
+WPF 결과를 CAD·Type3의 실제 윤곽 또는 힌팅 없는 범용 엔진 결과라고 표현하지 않는다.
+
+| 후보 | 이번 판단 |
+|---|---|
+| 설치된 WPF GlyphTypeface | Windows 공식 .NET API·MIT 공개 구현. 이미 로드 가능하고 지정 파일에서 glyph/outline 조회 가능. 실험에만 사용 |
+| FreeType/HarfBuzz | 원본 메트릭/셰이핑의 후속 후보. 계약의 공식 라이선스 비교 참조. 별도 바이너리/바인딩 설치·버전 검증이 필요해 이번에는 도입하지 않음 |
+| fontTools | name/table 읽기·윤곽 분석 대안. 이번에는 기존 Python 명령을 확인하지 못했고 도구 추가 없이 가능한 범위가 있어 미선정·미설치 |
+
+fontTools의 유지/라이선스/정확성까지 이번에 검증한 것은 아니다. 미선정 도구를 채택 후보로 확정하지 않는다.
+WPF는 운영 Dart 의존성이 아니며 고정 Flutter/Dart·전역 환경·루트 패키지를 바꾸지 않았다.
+원문 BMP 문자별 cmap → glyph 조회 후 기본 advance 합으로 진행시켰다.
+**kerning·ligature·셰이핑·fallback·문구 단위 측정은 실행하지 않았다.** 단순 진행 합과 번역된 glyph bbox 합집합이다.
+폰트의 여러 glyph를 혼합하지 않았고 누락 glyph/.notdef는 실패로 처리했다. 좌측 정렬·첫 pen baseline (0,0)이다.
+TTC/variable font·복잡한 문자 등은 이 작은 스크립트의 범위 밖이며 운영 지원 정책을 추가한 것이 아니다.
+
+공식 확인(2026-11-01): [GetGlyphOutline의 rendering/hinting 크기 인자](https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.glyphtypeface.getglyphoutline?view=windowsdesktop-10.0),
+[WPF 공식 저장소·MIT](https://github.com/dotnet/wpf), [OpenType OS/2](https://learn.microsoft.com/en-us/typography/opentype/spec/os2).
+
+## 4. 원본·WPF 치수와 조건부 계산
+
+아래는 해당 설치 파일에 대한 **font-unit 관찰값**이다. 전부 baseline (0,0), X 오른쪽/Y 위 기준이다.
+
+| 문자 | glyph ID | advance | ink minX/maxX | ink minY/maxY | ink 높이 |
+|---|---:|---:|---|---|---:|
+| H | 75 | 810 | 93 / 715 | 1 / 785 | 784 |
+| x | 123 | 640 | 40 / 598 | 1 / 595 | 594 |
+| g | 106 | 682 | 58 / 605 | -139 / 595 | 734 |
+| 한 | 14918 | 1024 | 71 / 1000 | -87 / 847 | 934 |
+| 글 | 4842 | 1024 | 32 / 992 | -101 / 823 | 924 |
+| 공백 U+0020 | 35 | 341 | 잉크 없음 | 잉크 없음 | 숫자 0으로 실패 대체하지 않음 |
+
+**가정: em=3 mm일 때만** 다음 수학적 환산이 된다. 사용자 지정 명목 크기 3이 em=3이라는 관찰은 아니다.
+
+| 문구 | 자폭 1에서 ink 폭 mm | ink 높이 mm | 단순 advance 합 mm |
+|---|---:|---:|---:|
+| H | 1.822265625 | 2.296875 | 2.373046875 |
+| x | 1.634765625 | 1.740234375 | 1.875 |
+| g | 1.6025390625 | 2.150390625 | 1.998046875 |
+| PUMP 123 | 15.4189453125 | 2.4052734375 | 15.8701171875 |
+| 한글 | 5.6982421875 | 2.77734375 | 6 |
+
+크기 후보 2/3/5 × 자폭 1.0/0.8 × 위 다섯 문구 = 30개 조건부 계산을 CSV로 만들었다.
+`hypotheticalEmMm` 열은 명시적 가정이고 `requestedNominalSize`와의 대응은 미검증이다.
+수식은 `fontUnits × assumedEmMm / 1024`, X에만 추가로 자폭을 곱한다. 반올림/보정 상수는 적용하지 않았다.
+자폭 0.8에서 X 폭·advance는 0.8배, Y 높이는 동일함을 스크립트 산술로 검사했다.
+이것은 프로그램에서 자폭을 바꿔 얻은 실측값이 아니다.
+H/x/g 높이는 다르지만 가정한 em 배율은 같으며, g의 아래 획을 맞추려고 크기를 재설정하지 않았다.
+소스 글꼴의 높이 차이만으로 CAD·Type3의 크기 해석을 확정할 수 없다.
+
+## 5. 사용자 실행 순서 — 직접 텍스트 우선
+
+실제 생산 파일은 사용하지 않는다. 측정용 새 문서와 그 복사본만 사용한다.
+
+1. 실제 현장 글꼴 한 파일/face를 확정하고 이 후보와의 이름·해시 차이를 기록한다. 다른 파일이면 해당 파일로 로컬 probe를 다시 실행한다.
+   글꼴 자체를 Git/외부로 전송하지 않는다. CAD·Type3의 제품명·정확한 버전, 글꼴 설정과 대체 경고 여부를 기록한다.
+2. 새 문서를 mm 단위로 만든다. 크기 2/3/5, 자폭 100/80%, 가로쓰기, 좌측/baseline 정렬,
+   기준점 (0,0), 추가 문자 간격 없음으로 H/x/g/PUMP 123/한글을 각각 별도 텍스트로 만든다.
+   사용하는 프로그램의 간격 속성이 배율인지 절대 길이인지 기록한다. 자동 맞춤·중앙/우측·다중 줄은 쓰지 않는다.
+   CAD의 TEXT STYLE 고정 높이/폭 배율과 객체 속성을 구분한다. 실제 단위/설정을 알 수 없으면 미확인으로 남긴다.
+3. **직접 만든 텍스트**의 글꼴 선택값·가능하면 실제 face 매핑, 크기·자폭·정렬·기준점 속성값을 먼저 기록한다.
+   이름 선택만으로 대체 없음이 증명되지 않으면 미확인으로 남긴다. 스크린샷은 설정 근거이며 길이 측정 근거가 아니다.
+4. 텍스트 원본을 보존한 복사본에서 프로그램의 윤곽 변환을 사용하고 실제 기하 min/max·폭/높이를 측정한다.
+   측정 명령·단위·원점/기준선 유지 여부·곡선 근사 여부를 적는다. 변환 지원/이용 조건이 불명확하면 중단하고 미측정으로 남긴다.
+   글상자/선택 상자 치수와 실제 잉크 기하 치수를 혼동하지 않는다.
+5. 그 다음에만 원본 텍스트를 보존한 실험 DXF를 내보내 별도 새 문서로 가져온다.
+   내보내기 버전·텍스트/윤곽 여부·문서 단위·STYLE 글꼴 파일/내부 이름·실제 대체 여부를 기록한다.
+   CAD 직접/Type3 직접/CAD DXF 가져오기/Type3 DXF 가져오기를 별도 행으로 기록한다.
+   첫 경로는 CAD 직접 텍스트를 DXF로 보낸 뒤 Type3 가져오기처럼 **출발 프로그램도 명시**한다.
+   속성과 기하를 다시 측정해 직접 작성 경로와 비교한다. 자동 윤곽 변환이나 글꼴 대체를 숨기지 않는다.
+6. 먼저 크기 3·자폭 1.0의 H/x/g를 확인하고, 같은 글꼴임을 확인한 뒤 2/5와 0.8·나머지 문구로 교차 확인한다.
+   `em 추정 = 실측 ink 높이 × UPEM / 대응 font-unit ink 높이`는 해당 윤곽·기준이 같을 때의 비교 후보일 뿐이다.
+   각 문자/크기의 추정 em 대 명목 크기 비율이 같은지, X 폭과 Y 높이가 별도로 일치하는지 확인한다.
+   불일치하면 실제 자원/힌팅·윤곽 변환/크기 정의/자폭/STYLE/정렬/가져오기 순으로 원인을 좁힌다. 보정 계수를 넣지 않는다.
+
+CAD나 Type3를 직접 조작하지 못해 위 단계는 실행하지 않았다. 글꼴 매핑·프로그램 버전이 미확정이므로
+해당 이름을 하드코딩한 새 DXF도 만들지 않았다. 기존 안내의 사각형 기대값을 복원한 것처럼 재생성하지 않는다.
+대신 30조건 CSV와 120개 미실행 기록행을 준비했다. 빈 관찰값은 정상값/검증 성공이 아니다.
+
+최소 반환 자료: 현장 파일 이름·내부 family/face·해시(파일 업로드 불필요), 프로그램/버전,
+단위·글꼴 대체 여부, H/x/g의 3·100%에서 속성값과 기하 폭/높이,
+이어 2/5·80% 교차 기록. 가능하면 설정/기하 측정 화면과 비생산 텍스트 DXF만 제공한다.
+원문 고객 자료·전체 작업 파일은 요구하지 않는다.
+
+## 6. 재현 소스와 격리 출력
+
+저장소에 남길 소스는 [read_font_metrics.ps1](../tool/font_probe/read_font_metrics.ps1) 및
+[사용 설명](../tool/font_probe/README.md)이다. 글꼴·파생 윤곽 파일은 포함하지 않는다.
+
+```powershell
+./tool/font_probe/read_font_metrics.ps1 `
+  -FontPath C:/Windows/Fonts/H2GTRE.TTF `
+  -OutputDirectory .tooling/font-size-probe-20261101
+```
+
+`.tooling/font-size-probe-20261101/`의 `font-metrics.json`(식별·테이블·glyph bbox/advance),
+`comparison-candidates.csv`(30 조건부 계산), `program-observations.csv`(120개 CAD/Type3×직접/DXF 미실행 행)는
+기존 `.tooling/` 규칙으로 Git 제외됨을 `git check-ignore`로 실제 확인했다. 다른 출력 경로를 쓰면 별도 확인해야 한다.
+로컬 JSON은 윤곽 제어점/글꼴 바이트·사용자 절대 경로를 담지 않는다. 샘플은 실험용 합성 문구다.
+
+## 7. 실행 검사와 현재 결론
+
+실행함:
+- 지정 파일 name/head/hhea/OS2 직접 읽기, WPF cmap·12 glyph의 경계/advance 조회.
+- H 원본 glyf 헤더/관찰 경계의 고정값, 공백의 잉크 없음/advance 341 확인.
+- 30조건 생성, 15개 자폭 쌍의 X/Y 변환 산술 확인. 검사에 쓴 1e-12는 스크립트 부동소수 계산 비교용이며 제작 공차가 아니다.
+- 격리 디렉터리 두 번 실행 결과 JSON/CSV 세 파일의 바이트 해시 일치.
+- 120개 프로그램 관찰 행 모두 `not-run`, 빈 속성/기하 값을 유지함 확인.
+- PowerShell 구문 검사, Git 제외·문서 링크·diff 검사. 없는 파일은 ItemNotFoundException, TTC fixture는 명시적 미지원 오류로 거부했다. 실패 출력 디렉터리가 생성되지 않았고 원본 글꼴 해시가 유지됨을 확인했다.
+
+미실행: 현장 파일 동일성 확정, CAD/Type3 직접/가져오기/윤곽 측정, 글꼴 대체 확인, 실제 명목↔em,
+실제 자폭/단위/정렬 해석, 물리 제작. 운영 코드가 바뀌지 않아 전체 verify·Dart 생성/분석/테스트/AOT·앱 빌드/CI는 반복하지 않았다.
+
+확정할 수 있는 것은 **이 설치 파일의 식별·메트릭과 기록한 도구 조건의 glyph 치수**다.
+사용자 크기→em→프로그램 속성/실제 기하 대응, 현장 파일/프로그램의 동일성, 임베딩/배포 권한은 미확정이다.
+다음 한 가지는 실제 현장 글꼴/프로그램을 확인하고 위 최소 직접 텍스트 측정표를 채우는 것이다.
