@@ -113,17 +113,19 @@ final class ChangedBasisKinds extends GeometryTextBasisDifferencePosition {
     required this.previousKind,
     required this.nextKind,
   }) : super._() {
-    final family = previousKind.index ~/ 2;
-    if (previousKind == nextKind || family != nextKind.index ~/ 2) {
+    final family = _kindFamily(previousKind);
+    if (previousKind == nextKind || family != _kindFamily(nextKind)) {
       throw ArgumentError.value(nextKind, 'nextKind', '같은 계열의 서로 다른 종류여야 합니다.');
     }
     final path = fields.previousFieldPath;
     final correct = switch (family) {
-      0 => RegExp(
+      _GeometryTextKindFamily.boundary => RegExp(
         r'^outline$|\.boundary$|\.outer$|\.exclusions\[[0-9]+\]$',
       ).hasMatch(path),
-      1 => RegExp(r'\.segments\[[0-9]+\]$').hasMatch(path),
-      _ => path.endsWith('.input.lineBreak'),
+      _GeometryTextKindFamily.pathSegment => RegExp(
+        r'\.segments\[[0-9]+\]$',
+      ).hasMatch(path),
+      _GeometryTextKindFamily.lineBreak => path.endsWith('.input.lineBreak'),
     };
     if (!correct) {
       throw ArgumentError.value(
@@ -307,3 +309,17 @@ void _checkElementPath(String path, String name) {
     throw ArgumentError.value(path, name, '추가/삭제는 목록 항목 전체를 가리켜야 합니다.');
   }
 }
+
+// 이 진단의 세 계열만 분류한다. 공개 enum의 선언 순서와 무관하다.
+enum _GeometryTextKindFamily { boundary, pathSegment, lineBreak }
+
+_GeometryTextKindFamily _kindFamily(GeometryTextBasisKind kind) =>
+    switch (kind) {
+      GeometryTextBasisKind.circleBoundary ||
+      GeometryTextBasisKind.pathBoundary => _GeometryTextKindFamily.boundary,
+      GeometryTextBasisKind.lineTo ||
+      GeometryTextBasisKind.arcTo => _GeometryTextKindFamily.pathSegment,
+      GeometryTextBasisKind.automaticLineBreak ||
+      GeometryTextBasisKind.specifiedLineBreak =>
+        _GeometryTextKindFamily.lineBreak,
+    };

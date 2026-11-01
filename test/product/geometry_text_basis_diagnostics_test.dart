@@ -147,4 +147,91 @@ void main() {
       argument('position', fields),
     );
   });
+  group('ChangedBasisKinds의 명시 계열 계약', () {
+    final pairs = [
+      (
+        GeometryTextBasisKind.circleBoundary,
+        GeometryTextBasisKind.pathBoundary,
+        'outline',
+      ),
+      (
+        GeometryTextBasisKind.lineTo,
+        GeometryTextBasisKind.arcTo,
+        'outline.path.segments[0]',
+      ),
+      (
+        GeometryTextBasisKind.automaticLineBreak,
+        GeometryTextBasisKind.specifiedLineBreak,
+        'areas[0].input.lineBreak',
+      ),
+    ];
+    for (final (a, b, path) in pairs) {
+      for (final (previous, next) in [(a, b), (b, a)]) {
+        test('${previous.name} → ${next.name}은 같은 계열의 실제 요소 경로를 허용한다', () {
+          final value = ChangedBasisKinds(
+            fields: ComparedBasisFields(
+              previousFieldPath: path,
+              nextFieldPath: path,
+            ),
+            previousKind: previous,
+            nextKind: next,
+          );
+          expect(value.previousKind, previous);
+          expect(value.nextKind, next);
+          expect(value.previousFieldPath, path);
+          expect(value.nextFieldPath, path);
+        });
+      }
+    }
+    final invalidPairs = [
+      (
+        GeometryTextBasisKind.circleBoundary,
+        GeometryTextBasisKind.automaticLineBreak,
+      ),
+      (GeometryTextBasisKind.lineTo, GeometryTextBasisKind.circleBoundary),
+      (GeometryTextBasisKind.lineTo, GeometryTextBasisKind.specifiedLineBreak),
+      (
+        GeometryTextBasisKind.automaticLineBreak,
+        GeometryTextBasisKind.pathBoundary,
+      ),
+      (GeometryTextBasisKind.automaticLineBreak, GeometryTextBasisKind.arcTo),
+    ];
+    for (final (previous, next) in invalidPairs) {
+      test('${previous.name} → ${next.name}의 다른 계열 조합은 nextKind 인자로 거부한다', () {
+        expect(
+          () => ChangedBasisKinds(
+            fields: ComparedBasisFields(
+              previousFieldPath: 'outline',
+              nextFieldPath: 'outline',
+            ),
+            previousKind: previous,
+            nextKind: next,
+          ),
+          argument('nextKind', next),
+        );
+      });
+    }
+    for (final (previous, next, wrongPath) in [
+      (GeometryTextBasisKind.lineTo, GeometryTextBasisKind.arcTo, 'outline'),
+      (
+        GeometryTextBasisKind.automaticLineBreak,
+        GeometryTextBasisKind.specifiedLineBreak,
+        'outline',
+      ),
+    ]) {
+      test('${previous.name} → ${next.name}도 다른 계열 경로는 허용하지 않는다', () {
+        expect(
+          () => ChangedBasisKinds(
+            fields: ComparedBasisFields(
+              previousFieldPath: wrongPath,
+              nextFieldPath: wrongPath,
+            ),
+            previousKind: previous,
+            nextKind: next,
+          ),
+          argument('fields.previousFieldPath', wrongPath),
+        );
+      });
+    }
+  });
 }
