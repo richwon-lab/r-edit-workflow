@@ -8,6 +8,13 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$outputNames = @('font-metrics.json','comparison-candidates.csv','program-observations.csv')
+foreach ($outputName in $outputNames) {
+  $outputPath = Join-Path $OutputDirectory $outputName
+  if (Test-Path -LiteralPath $outputPath) {
+    throw "기존 실험 결과가 있습니다: $outputPath. 기록을 보존하려면 새 출력 디렉터리를 사용하세요."
+  }
+}
 Add-Type -AssemblyName PresentationCore
 $fontFile = Get-Item -LiteralPath $FontPath
 $bytes = [IO.File]::ReadAllBytes($fontFile.FullName)
@@ -120,14 +127,26 @@ $metrics['glyphs'] = $glyphRows.ToArray()
 # 실험 출력만 지정 디렉터리에 쓴다. 글꼴이나 윤곽은 복제하지 않는다.
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $utf8 = [Text.UTF8Encoding]::new($false)
-[IO.File]::WriteAllText((Join-Path $OutputDirectory 'font-metrics.json'),($metrics|ConvertTo-Json -Depth 10),$utf8)
-$sampleRows | ForEach-Object {[pscustomobject]$_} | Export-Csv (Join-Path $OutputDirectory 'comparison-candidates.csv') -NoTypeInformation -Encoding utf8
-$sampleRows | ForEach-Object {
+# 사전 검사 뒤 다른 실행이 같은 파일을 만들어도 기존 파일은 열거나 덮어쓰지 않는다.
+function Write-NewProbeText([string]$path, [string]$content) {
+  $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+  try {
+    $contentBytes = $utf8.GetBytes($content)
+    $stream.Write($contentBytes, 0, $contentBytes.Length)
+  } finally {
+    $stream.Dispose()
+  }
+}
+Write-NewProbeText (Join-Path $OutputDirectory 'font-metrics.json') ($metrics|ConvertTo-Json -Depth 10)
+$comparisonCsv = $sampleRows | ForEach-Object {[pscustomobject]$_} | ConvertTo-Csv -NoTypeInformation
+Write-NewProbeText (Join-Path $OutputDirectory 'comparison-candidates.csv') (($comparisonCsv -join [Environment]::NewLine) + [Environment]::NewLine)
+$observationCsv = $sampleRows | ForEach-Object {
   foreach ($program in @('CAD','Type3')) { foreach ($route in @('direct-text','dxf-import')) {
     [pscustomobject]@{sampleId=$_.sampleId;text=$_.text;requestedSize=$_.requestedNominalSize;requestedHorizontalScale=$_.horizontalScale;
       program=$program;route=$route;programVersion='';requestedFont='';actualFont='';fallbackEvidence='';documentUnit='mm';
       displayedSize='';displayedHorizontalScale='';styleFixedHeight='';baselineOrigin='';inkWidthMm='';inkHeightMm='';
       geometryMeasurementMethod='';evidenceFile='';status='not-run';notes=''}
   }}
-} | Export-Csv (Join-Path $OutputDirectory 'program-observations.csv') -NoTypeInformation -Encoding utf8
+} | ConvertTo-Csv -NoTypeInformation
+Write-NewProbeText (Join-Path $OutputDirectory 'program-observations.csv') (($observationCsv -join [Environment]::NewLine) + [Environment]::NewLine)
 Write-Output "Read $($fontFile.Name): UPEM=$unitsPerEm; $($glyphRows.Count) glyphs; $($sampleRows.Count) conditional samples. CAD/Type3 NOT RUN."

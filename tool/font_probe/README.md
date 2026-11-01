@@ -11,7 +11,9 @@
 - 입력: 호출자가 확인한 신뢰할 수 있는 로컬 단독 TrueType/OpenType sfnt 파일. TTC/variable font는 명시 거부한다.
   범용/보안 검증된 font parser가 아니며 외부의 손상된 글꼴을 검사하는 데 사용하지 않는다.
 - 출력: `font-metrics.json`, `comparison-candidates.csv`, `program-observations.csv`.
-  지정 출력 디렉터리의 동명 실험 파일을 덮어쓰므로 전용 경로를 쓴다. 원본 font는 읽기만 한다.
+  세 출력 중 하나라도 존재하면 첫 쓰기 전에 실패하며 새 출력 디렉터리를 안내한다. 재실행에는 새 디렉터리를 쓴다. 원본 font는 읽기만 한다.
+- 디렉터리가 없거나 비어 있으면 실행할 수 있고, 관련 없는 파일은 허용·보존한다.
+- 사전 검사 뒤 같은 이름이 생겨도 FileMode.CreateNew로 덮어쓰지 않는다. 경합/쓰기 실패 시 일부 새 출력이 남을 수 있으며 자동 삭제·백업·병합·강제 덮어쓰기는 하지 않는다. 다시 실행할 때 새 디렉터리를 사용한다.
 - 글꼴 바이트/윤곽은 복제하지 않는다. 출력은 `.tooling/` 안에 두고 `git check-ignore`로 확인한다.
 - 메트릭은 font units. WPF glyph geometry는 em/hinting 크기=unitsPerEm이며 Y 위 baseline 좌표로 기록한다.
   raw glyf bbox(제어점 포함)와 WPF ink 경계를 구분한다. 단순 cmap/advance 합이며 shaping/kerning/문구 전체 측정이 아니다.
